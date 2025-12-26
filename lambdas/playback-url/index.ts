@@ -157,6 +157,13 @@ export const handler = async (
     return createResponse(500, { error: "Internal server error" });
   }
 
+  if (!CF_KEY_PAIR_ID) {
+    console.error(
+      "CF_KEY_PAIR_ID is not configured - signed URLs will not work"
+    );
+    return createResponse(500, { error: "Internal server error" });
+  }
+
   if (
     URL_EXPIRES_IN_SECONDS <= 0 ||
     !Number.isInteger(URL_EXPIRES_IN_SECONDS)
