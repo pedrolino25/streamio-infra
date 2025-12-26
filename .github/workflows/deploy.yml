@@ -1,0 +1,133 @@
+name: Deploy Streamio Platform
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+env:
+  AWS_REGION: eu-west-2
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    concurrency:
+      group: terraform-${{ github.ref }}
+      cancel-in-progress: false
+
+    steps:
+      ########################################
+      # 1️⃣ Checkout
+      ########################################
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      ########################################
+      # 2️⃣ Detect environment from branch
+      ########################################
+      - name: Set environment
+        run: |
+          if [ "${GITHUB_REF##*/}" = "main" ]; then
+            echo "ENVIRONMENT=prod" >> $GITHUB_ENV
+          else
+            echo "ENVIRONMENT=dev" >> $GITHUB_ENV
+          fi
+
+      ########################################
+      # 3️⃣ AWS credentials
+      ########################################
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      ########################################
+      # 4️⃣ Login to ECR
+      ########################################
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      ########################################
+      # 5️⃣ Resolve AWS Account ID
+      ########################################
+      - name: Resolve AWS account
+        run: |
+          echo "AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)" >> $GITHUB_ENV
+
+      ########################################
+      # 6️⃣ Build Lambdas (ZIP artefacts)
+      ########################################
+      - name: Build Lambda functions
+        run: |
+          set -e
+          for lambda in upload-url s3-dispatcher playback-url; do
+            echo "Building lambda: $lambda"
+            cd lambdas/$lambda
+            npm install
+            npm run build
+            npm run zip
+            cd ../../
+          done
+
+      ########################################
+      # 7️⃣ Define worker image
+      ########################################
+      - name: Define worker image
+        run: |
+          ECR_REPO="streamio-worker-${ENVIRONMENT}"
+          IMAGE_TAG="${GITHUB_SHA}"
+          IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}"
+
+          echo "ECR_REPO=${ECR_REPO}" >> $GITHUB_ENV
+          echo "WORKER_IMAGE=${IMAGE_URI}" >> $GITHUB_ENV
+
+      ########################################
+      # 8️⃣ Ensure ECR repository exists
+      ########################################
+      - name: Ensure ECR repository exists
+        run: |
+          aws ecr describe-repositories \
+            --repository-names "${ECR_REPO}" \
+            --region "${AWS_REGION}" \
+          || aws ecr create-repository \
+            --repository-name "${ECR_REPO}" \
+            --region "${AWS_REGION}"
+
+      ########################################
+      # 9️⃣ Build & push worker image
+      ########################################
+      - name: Build and push worker image
+        run: |
+          docker build -t "${WORKER_IMAGE}" ./worker
+          docker push "${WORKER_IMAGE}"
+
+      ########################################
+      # 🔟 Setup Terraform
+      ########################################
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+
+      ########################################
+      # 1️⃣1️⃣ Terraform Init
+      ########################################
+      - name: Terraform Init
+        working-directory: infra/terraform
+        run: terraform init -reconfigure
+
+      ########################################
+      # 1️⃣2️⃣ Terraform Apply
+      ########################################
+      - name: Terraform Apply
+        working-directory: infra/terraform
+        env:
+          TF_VAR_environment: ${{ env.ENVIRONMENT }}
+          TF_VAR_worker_image: ${{ env.WORKER_IMAGE }}
+          TF_VAR_cloudfront_public_key: ${{ secrets.CLOUDFRONT_PUBLIC_KEY }}
+          TF_VAR_cloudfront_private_key: ${{ secrets.CLOUDFRONT_PRIVATE_KEY }}
+        run: terraform apply -auto-approve
