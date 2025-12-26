@@ -230,6 +230,7 @@ For automatic deployment, configure these secrets in your GitHub repository:
 - `AWS_SECRET_ACCESS_KEY` - AWS secret key
 - `CLOUDFRONT_PUBLIC_KEY` - CloudFront public key (PEM format)
 - `CLOUDFRONT_PRIVATE_KEY` - CloudFront private key (PEM format)
+- `CLOUDFRONT_KEY_PAIR_ID` - CloudFront Key Pair ID (e.g., APKA... or K...) used for signing cookies
 
 ### Automatic Deployment
 

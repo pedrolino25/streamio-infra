@@ -130,4 +130,5 @@ jobs:
           TF_VAR_worker_image: ${{ env.WORKER_IMAGE }}
           TF_VAR_cloudfront_public_key: ${{ secrets.CLOUDFRONT_PUBLIC_KEY }}
           TF_VAR_cloudfront_private_key: ${{ secrets.CLOUDFRONT_PRIVATE_KEY }}
+          TF_VAR_cloudfront_key_pair_id: ${{ secrets.CLOUDFRONT_KEY_PAIR_ID }}
         run: terraform apply -auto-approve

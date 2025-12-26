@@ -10,7 +10,10 @@ export class Config {
     this.cloudfrontDomain = this.getRequiredEnv("CLOUDFRONT_DOMAIN");
     this.cfKeyPairId = this.getRequiredEnv("CF_KEY_PAIR_ID");
     this.cfPrivateKey = this.getRequiredEnv("CF_PRIVATE_KEY");
-    this.urlExpiresInSeconds = this.getNumberEnv("URL_EXPIRES_IN_SECONDS", 86400);
+    this.urlExpiresInSeconds = this.getNumberEnv(
+      "URL_EXPIRES_IN_SECONDS",
+      86400
+    );
   }
 
   private getRequiredEnv(key: string): string {
@@ -28,4 +31,3 @@ export class Config {
     return isNaN(parsed) ? defaultValue : parsed;
   }
 }
-
