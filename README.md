@@ -33,9 +33,9 @@ This platform enables multiple projects to:
 └────┬────┘
      │ API Key
      ▼
-┌─────────────────┐
-│  API Gateway    │
-│                 │
+┌─────────────────────┐
+│  API Gateway        │
+│                     │
 │  POST /upload-url    → Presigned S3 PUT
 │  POST /playback-url  → CloudFront Signed URL
 └────┬────────────────┘
@@ -57,14 +57,14 @@ This platform enables multiple projects to:
 └──────┬──────────┘
        │
        ▼
-┌─────────────────┐
-│  ECS RunTask    │
-│  (FFmpeg Worker)│
-│                 │
-│  • Download RAW │
-│  • Process video│
-│  • Upload PROC  │
-└──────┬──────────┘
+┌──────────────────┐
+│  ECS RunTask     │
+│  (FFmpeg Worker) │
+│                  │
+│  • Download RAW  │
+│  • Process video │
+│  • Upload PROC   │
+└──────┬───────────┘
        │
        ▼
 ┌─────────────────┐
