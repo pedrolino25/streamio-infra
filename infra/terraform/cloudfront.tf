@@ -38,9 +38,7 @@ resource "aws_cloudfront_distribution" "cdn" {
     compress = true
 
     # 🔐 Enforce signed requests
-    trusted_key_groups = var.cloudfront_public_key != ""
-      ? [aws_cloudfront_key_group.key_group[0].id]
-      : []
+    trusted_key_groups = local.cloudfront_trusted_key_groups
 
     # 🔑 REQUIRED for signed cookies
     forwarded_values {
@@ -72,8 +70,4 @@ resource "aws_cloudfront_distribution" "cdn" {
     cloudfront_default_certificate = true
   }
 
-  ##########################################
-  # Ensure key group exists first
-  ##########################################
-  depends_on = var.cloudfront_public_key != "" ? [aws_cloudfront_key_group.key_group[0]] : []
 }
