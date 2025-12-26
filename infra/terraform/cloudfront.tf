@@ -6,28 +6,6 @@ resource "aws_cloudfront_origin_access_identity" "oai" {
 }
 
 ############################################
-# Optional CloudFront Public Key
-############################################
-resource "aws_cloudfront_public_key" "public_key" {
-  count       = var.cloudfront_public_key != "" ? 1 : 0
-  name        = "video-signing-key"
-  encoded_key = var.cloudfront_public_key
-  comment     = "Public key for signed cookies"
-}
-
-############################################
-# Optional CloudFront Key Group
-############################################
-resource "aws_cloudfront_key_group" "key_group" {
-  count = var.cloudfront_public_key != "" ? 1 : 0
-  name  = "video-key-group"
-
-  items = [
-    aws_cloudfront_public_key.public_key[0].id
-  ]
-}
-
-############################################
 # CloudFront Distribution
 ############################################
 resource "aws_cloudfront_distribution" "cdn" {
@@ -43,8 +21,7 @@ resource "aws_cloudfront_distribution" "cdn" {
     origin_id   = "processed"
 
     s3_origin_config {
-      origin_access_identity =
-        aws_cloudfront_origin_access_identity.oai.cloudfront_access_identity_path
+      origin_access_identity = aws_cloudfront_origin_access_identity.oai.cloudfront_access_identity_path
     }
   }
 
@@ -98,7 +75,5 @@ resource "aws_cloudfront_distribution" "cdn" {
   ##########################################
   # Ensure key group exists first
   ##########################################
-  depends_on = var.cloudfront_public_key != ""
-    ? [aws_cloudfront_key_group.key_group]
-    : []
+  depends_on = var.cloudfront_public_key != "" ? [aws_cloudfront_key_group.key_group[0]] : []
 }
