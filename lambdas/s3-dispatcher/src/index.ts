@@ -1,5 +1,5 @@
-import { S3DispatcherHandler } from "./src/handlers/s3-dispatcher.handler";
-import { S3Event } from "./src/types";
+import { S3DispatcherHandler } from "./handlers/s3-dispatcher.handler";
+import { S3Event } from "./types";
 
 const handlerInstance = new S3DispatcherHandler();
 

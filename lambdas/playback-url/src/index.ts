@@ -1,5 +1,5 @@
-import { PlaybackUrlHandler } from "./src/handlers/playback-url.handler";
-import { ApiGatewayEvent, ApiGatewayResponse } from "./src/types";
+import { PlaybackUrlHandler } from "./handlers/playback-url.handler";
+import { ApiGatewayEvent, ApiGatewayResponse } from "./types";
 
 const handlerInstance = new PlaybackUrlHandler();
 
