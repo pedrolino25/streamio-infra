@@ -9,6 +9,7 @@ resource "aws_lambda_function" "playback" {
     variables = {
       CLOUDFRONT_DOMAIN = aws_cloudfront_distribution.cdn.domain_name
       CF_PRIVATE_KEY    = var.cloudfront_private_key
+      PROJECTS_TABLE    = aws_dynamodb_table.projects.name
     }
   }
 }
