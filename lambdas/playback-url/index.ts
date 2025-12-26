@@ -31,9 +31,6 @@ function json(statusCode: number, body: object): ApiGatewayResponse {
   };
 }
 
-/**
- * Validate project API key
- */
 async function validateProject(apiKey: string): Promise<boolean> {
   const result = await db.send(
     new GetItemCommand({
@@ -44,11 +41,8 @@ async function validateProject(apiKey: string): Promise<boolean> {
   return !!result.Item;
 }
 
-/**
- * Generate CloudFront signed cookies
- */
 function generateSignedCookies(resourcePath: string, expires: number) {
-  const resource = `https://${CLOUDFRONT_DOMAIN}${resourcePath}`;
+  const resource = `https://${CLOUDFRONT_DOMAIN}/projects/${resourcePath}`;
 
   const policy = JSON.stringify({
     Statement: [
