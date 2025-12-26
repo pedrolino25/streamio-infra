@@ -97,12 +97,8 @@ export const handler = async (
 
   const expires = Math.floor(Date.now() / 1000) + URL_EXPIRES_IN_SECONDS;
 
-  /**
-   * Example projectPath:
-   * /projects/my-first-project/v/0/*
-   */
   const cookies = generateSignedCookies(projectPath, expires);
-  const cloudfrontUrl = `https://${CLOUDFRONT_DOMAIN}${projectPath}`;
+  const cloudfrontUrl = `https://${CLOUDFRONT_DOMAIN}/projects/${projectPath}`;
 
   return {
     statusCode: 200,
