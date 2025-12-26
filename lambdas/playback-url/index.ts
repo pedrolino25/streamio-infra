@@ -8,7 +8,7 @@ const CLOUDFRONT_DOMAIN = process.env.CLOUDFRONT_DOMAIN!;
 const CF_KEY_PAIR_ID = process.env.CF_KEY_PAIR_ID || "";
 const CF_PRIVATE_KEY = process.env.CF_PRIVATE_KEY!;
 const URL_EXPIRES_IN_SECONDS = parseInt(
-  process.env.URL_EXPIRES_IN_SECONDS || "3600",
+  process.env.URL_EXPIRES_IN_SECONDS || "86400",
   10
 );
 
@@ -87,6 +87,7 @@ function signUrl(url: string, expires: number): string {
     Statement: [
       {
         Resource: url,
+        Effect: "Allow",
         Condition: {
           DateLessThan: { "AWS:EpochTime": expires },
         },
@@ -106,9 +107,10 @@ function signUrl(url: string, expires: number): string {
     throw new Error(`Failed to sign URL: ${message}`);
   }
 
-  return `${url}?Expires=${expires}&Signature=${encodeURIComponent(
-    signature
-  )}&Key-Pair-Id=${CF_KEY_PAIR_ID}`;
+  const policyBase64 = Buffer.from(policy).toString("base64");
+  return `${url}?Policy=${encodeURIComponent(
+    policyBase64
+  )}&Signature=${encodeURIComponent(signature)}&Key-Pair-Id=${CF_KEY_PAIR_ID}`;
 }
 
 async function validateProject(apiKey: string): Promise<boolean> {

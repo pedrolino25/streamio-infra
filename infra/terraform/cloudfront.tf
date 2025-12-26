@@ -22,7 +22,7 @@ resource "aws_cloudfront_distribution" "cdn" {
     trusted_key_groups = var.cloudfront_public_key != "" ? [aws_cloudfront_key_group.key_group[0].id] : []
 
     forwarded_values {
-      query_string = false
+      query_string = true
       cookies { forward = "none" }
     }
   }
