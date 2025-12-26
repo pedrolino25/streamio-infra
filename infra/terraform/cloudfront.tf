@@ -6,6 +6,37 @@ resource "aws_cloudfront_origin_access_identity" "oai" {
 }
 
 ############################################
+# Response Headers Policy (CORS)
+############################################
+resource "aws_cloudfront_response_headers_policy" "cors" {
+  name = "cors-headers-policy"
+
+  cors_config {
+    access_control_allow_credentials = false
+
+    access_control_allow_headers {
+      items = ["*"]
+    }
+
+    access_control_allow_methods {
+      items = ["GET", "HEAD", "OPTIONS"]
+    }
+
+    access_control_allow_origins {
+      items = ["*"]
+    }
+
+    access_control_expose_headers {
+      items = ["Content-Length", "Content-Type", "Content-Range", "Accept-Ranges"]
+    }
+
+    access_control_max_age_sec = 3600
+
+    origin_override = true
+  }
+}
+
+############################################
 # CloudFront Distribution
 ############################################
 resource "aws_cloudfront_distribution" "cdn" {
@@ -32,13 +63,16 @@ resource "aws_cloudfront_distribution" "cdn" {
     target_origin_id       = "processed"
     viewer_protocol_policy = "redirect-to-https"
 
-    allowed_methods = ["GET", "HEAD"]
+    allowed_methods = ["GET", "HEAD", "OPTIONS"]
     cached_methods  = ["GET", "HEAD"]
 
     compress = true
 
     # 🔐 Enforce signed requests
     trusted_key_groups = local.cloudfront_trusted_key_groups
+
+    # 🌐 CORS headers
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.cors.id
 
     # 🔑 REQUIRED for signed cookies
     forwarded_values {
