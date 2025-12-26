@@ -102,11 +102,12 @@ export const handler = async (
    * /projects/my-first-project/v/0/*
    */
   const cookies = generateSignedCookies(projectPath, expires);
+  const cloudfrontUrl = `https://${CLOUDFRONT_DOMAIN}${projectPath}`;
 
   return {
     statusCode: 200,
     body: JSON.stringify({
-      message: "Signed cookies issued",
+      url: cloudfrontUrl,
       expiresAt: expires,
     }),
     headers: {
