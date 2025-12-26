@@ -60,12 +60,16 @@ function signUrl(url: string, expires: number): string {
 
   try {
     const urlObj = new URL(url);
-    const pathParts = urlObj.pathname.split("/");
-    pathParts.pop();
-    const resourceUrl = `${urlObj.protocol}//${urlObj.host}${pathParts.join(
-      "/"
-    )}/*`;
+    // Extract path parts, filter out empty strings, and remove the filename
+    const pathParts = urlObj.pathname.split("/").filter(Boolean);
+    pathParts.pop(); // Remove the filename
 
+    // Build resource URL with wildcard for directory access
+    const resourcePath =
+      pathParts.length > 0 ? `/${pathParts.join("/")}/*` : "/*";
+    const resourceUrl = `${urlObj.protocol}//${urlObj.host}${resourcePath}`;
+
+    // CloudFront requires compact JSON (no whitespace) - JSON.stringify by default produces compact JSON
     const policy = JSON.stringify({
       Statement: [
         {
@@ -93,11 +97,22 @@ function signUrl(url: string, expires: number): string {
     }
 
     const policyBase64 = Buffer.from(policy).toString("base64");
-    return `${url}?Policy=${encodeURIComponent(
+    const signedUrl = `${url}?Policy=${encodeURIComponent(
       policyBase64
     )}&Signature=${encodeURIComponent(
       signature
     )}&Key-Pair-Id=${CF_KEY_PAIR_ID}`;
+
+    // Log policy details for debugging (remove in production if needed)
+    console.log("Signed URL generated:", {
+      resourceUrl,
+      expires,
+      expiresDate: new Date(expires * 1000).toISOString(),
+      keyPairId: CF_KEY_PAIR_ID,
+      policyLength: policy.length,
+    });
+
+    return signedUrl;
   } catch (error) {
     if (
       error instanceof Error &&
