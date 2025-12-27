@@ -22,7 +22,6 @@ export class UrlSigner {
       throw new Error("Invalid expiration timestamp");
     }
 
-    // Sign all HLS assets
     const resource = `https://${this.cloudfrontDomain}/${projectId}/*`;
     const policy = this.createPolicy(resource, expires);
 
@@ -34,12 +33,8 @@ export class UrlSigner {
 
     const signature = this.createSignature(policy);
 
-    // IMPORTANT:
-    // baseUrl must be the REAL requested path (index.m3u8 lives below this)
     const baseUrl = `https://${this.cloudfrontDomain}/${projectId}`;
 
-    // IMPORTANT:
-    // DO NOT encode Signature or Policy again
     const queryParams =
       `Policy=${policyBase64}` +
       `&Signature=${signature}` +
