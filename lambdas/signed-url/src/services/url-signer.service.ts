@@ -38,15 +38,16 @@ export class UrlSigner {
       // Frontend can append any file path to baseUrl and add queryParams
       // Example: baseUrl + "/video.m3u8" + "?" + queryParams
       const baseUrl = `https://${this.cloudfrontDomain}/${projectId}`;
-      const params = new URLSearchParams({
-        "Policy": Buffer.from(policy).toString("base64url"),
-        "Signature": signature,
-        "Key-Pair-Id": this.keyPairId,
-      });
+      
+      // Manually construct query string
+      // Policy and Signature are already base64url encoded (URL-safe), so they don't need additional encoding
+      // Key-Pair-Id needs to be URL-encoded
+      const policyBase64 = Buffer.from(policy).toString("base64url");
+      const queryParams = `Policy=${policyBase64}&Signature=${signature}&Key-Pair-Id=${encodeURIComponent(this.keyPairId)}`;
 
       return {
         baseUrl,
-        queryParams: params.toString(),
+        queryParams,
       };
     } catch (error) {
       console.error("URL signing error:", {
