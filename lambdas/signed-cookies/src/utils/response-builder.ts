@@ -81,7 +81,9 @@ export class ResponseBuilder {
   }
 
   private static buildCookieAttributes(domain?: string): string {
-    const cookieDomain = domain || process.env.CLOUDFRONT_DOMAIN;
+    // Use custom domain for cookie Domain attribute (allows cookies to work with custom domain)
+    // Fallback to CLOUDFRONT_CUSTOM_DOMAIN or CLOUDFRONT_DOMAIN if not provided
+    const cookieDomain = domain || process.env.CLOUDFRONT_CUSTOM_DOMAIN || process.env.CLOUDFRONT_DOMAIN;
 
     const rootDomain = cookieDomain
       ? this.extractRootDomain(cookieDomain)

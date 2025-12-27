@@ -7,7 +7,11 @@ resource "aws_lambda_function" "signed_cookies" {
 
   environment {
     variables = {
-      CLOUDFRONT_DOMAIN      = local.cloudfront_domain
+      # Use actual CloudFront distribution domain for signed cookie validation
+      # Signed cookies MUST be validated against the distribution domain, not the CNAME
+      CLOUDFRONT_DOMAIN      = aws_cloudfront_distribution.cdn.domain_name
+      # Custom domain for cookie Domain attribute (allows cookies to work with custom domain)
+      CLOUDFRONT_CUSTOM_DOMAIN = local.cloudfront_domain
       CF_PRIVATE_KEY         = var.cloudfront_private_key
       CF_KEY_PAIR_ID         = var.cloudfront_key_pair_id
       PROJECTS_TABLE         = aws_dynamodb_table.projects.name
