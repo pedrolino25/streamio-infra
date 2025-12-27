@@ -7,7 +7,6 @@ export class CookieSigner {
     private readonly keyPairId: string,
     private readonly privateKey: string
   ) {
-    // Validate required configuration
     if (!cloudfrontDomain || !keyPairId || !privateKey) {
       throw new Error("CookieSigner: Missing required configuration");
     }
@@ -15,7 +14,6 @@ export class CookieSigner {
 
   sign(path: string, expires: number): SignedCookies {
     try {
-      // Validate inputs
       if (!path || typeof path !== "string") {
         throw new Error("Invalid path parameter");
       }
@@ -33,7 +31,6 @@ export class CookieSigner {
         "CloudFront-Key-Pair-Id": this.keyPairId,
       };
     } catch (error) {
-      // Log error details for debugging but don't expose internals
       console.error("Cookie signing error:", {
         error: error instanceof Error ? error.message : String(error),
         hasKeyPairId: !!this.keyPairId,

@@ -28,13 +28,11 @@ export class SignedCookiesHandler {
     const requestId = event.requestContext?.requestId;
     const origin = this.extractHeader(event, "origin", "Origin");
 
-    // Handle OPTIONS preflight request
     if (event.httpMethod === "OPTIONS") {
       return ResponseBuilder.options(origin);
     }
 
     try {
-      // Validate API key
       const apiKey = this.extractHeader(event, "x-api-key", "X-Api-Key");
       const validation = RequestValidator.validateApiKey(apiKey);
       if (!validation.valid) {
@@ -51,7 +49,6 @@ export class SignedCookiesHandler {
         );
       }
 
-      // Get project from database
       const project = await this.projectService.getProject(apiKey!);
       if (!project) {
         this.logError("Project not found", {
@@ -81,7 +78,8 @@ export class SignedCookiesHandler {
         expires,
         cookies,
         this.config.cloudfrontDomain,
-        origin
+        origin,
+        wildcardPath
       );
     } catch (error) {
       return this.handleError(error, origin, requestId);

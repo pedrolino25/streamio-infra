@@ -5,7 +5,8 @@ export class ResponseBuilder {
     expiresAt: number,
     cookies: SignedCookies,
     domain?: string,
-    origin?: string
+    origin?: string,
+    wildcardPath?: any
   ): ApiGatewayResponse {
     const cookieAttributes = this.buildCookieAttributes(domain);
     const setCookieHeaders = this.buildCookieHeaders(cookies, cookieAttributes);
@@ -15,6 +16,7 @@ export class ResponseBuilder {
       statusCode: 200,
       body: JSON.stringify({
         expiresAt,
+        wildcardPath,
         message: "Signed cookies set successfully",
       }),
       headers: {

@@ -30,15 +30,15 @@ export class ProjectService {
         projectName: result.Item.project_name?.S,
       };
     } catch (error) {
-      // Handle specific AWS errors
       if (error instanceof ProvisionedThroughputExceededException) {
-        throw new Error("Service temporarily unavailable. Please try again later.");
+        throw new Error(
+          "Service temporarily unavailable. Please try again later."
+        );
       }
       if (error instanceof ResourceNotFoundException) {
         throw new Error("Configuration error: projects table not found");
       }
 
-      // Log full error for debugging, but return generic message
       console.error("DynamoDB error:", {
         error: error instanceof Error ? error.message : String(error),
         tableName: this.tableName,
