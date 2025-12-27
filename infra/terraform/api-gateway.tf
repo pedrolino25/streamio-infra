@@ -49,7 +49,9 @@ resource "aws_api_gateway_integration" "signed_cookies_options" {
   type = "MOCK"
   
   request_templates = {
-    "application/json" = "{\"statusCode\": 200}"
+    "application/json" = jsonencode({
+      statusCode = 200
+    })
   }
 }
 
@@ -64,6 +66,7 @@ resource "aws_api_gateway_method_response" "signed_cookies_options" {
     "method.response.header.Access-Control-Allow-Headers" = true
     "method.response.header.Access-Control-Allow-Methods" = true
     "method.response.header.Access-Control-Allow-Origin"  = true
+    "method.response.header.Access-Control-Max-Age"       = true
   }
 }
 
@@ -78,6 +81,11 @@ resource "aws_api_gateway_integration_response" "signed_cookies_options" {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-api-key'"
     "method.response.header.Access-Control-Allow-Methods" = "'POST,OPTIONS'"
     "method.response.header.Access-Control-Allow-Origin" = "'*'"
+    "method.response.header.Access-Control-Max-Age" = "'86400'"
+  }
+
+  response_templates = {
+    "application/json" = ""
   }
 }
 

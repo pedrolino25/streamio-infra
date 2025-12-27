@@ -19,6 +19,8 @@ export class ResponseBuilder {
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, x-api-key",
         "Access-Control-Allow-Credentials": "false",
         "Access-Control-Expose-Headers": "Set-Cookie",
       },
@@ -35,6 +37,8 @@ export class ResponseBuilder {
       headers: {
         "Content-Type": "application/json",
         "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, x-api-key",
         "Access-Control-Allow-Credentials": "false",
       },
     };
