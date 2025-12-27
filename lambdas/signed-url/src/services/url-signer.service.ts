@@ -2,12 +2,11 @@ import crypto from "crypto";
 
 export class UrlSigner {
   constructor(
-    private readonly cloudfrontDistributionDomain: string, // For policy resource
-    private readonly cloudfrontCustomDomain: string, // For baseUrl
+    private readonly cloudfrontDomain: string, // Domain for both policy and baseUrl
     private readonly keyPairId: string,
     private readonly privateKey: string
   ) {
-    if (!cloudfrontDistributionDomain || !cloudfrontCustomDomain || !keyPairId || !privateKey) {
+    if (!cloudfrontDomain || !keyPairId || !privateKey) {
       throw new Error("UrlSigner: Missing required configuration");
     }
   }
@@ -29,16 +28,16 @@ export class UrlSigner {
         throw new Error("Invalid expiration timestamp");
       }
 
-      // IMPORTANT: Policy resource MUST use distribution domain (CloudFront requirement)
-      // Even though the actual URL uses custom domain, the policy must reference distribution domain
-      const resource = `https://${this.cloudfrontDistributionDomain}/${projectId}/*`;
+      // Policy resource MUST match the domain used in the actual request URL
+      // When using custom domain, the policy must authorize the custom domain
+      const resource = `https://${this.cloudfrontDomain}/${projectId}/*`;
       const policy = this.createPolicy(resource, expires);
       const signature = this.createSignature(policy);
 
-      // Build base URL using custom domain (user-friendly)
+      // Build base URL - same domain as policy resource
       // Frontend can append any file path to baseUrl and add queryParams
       // Example: baseUrl + "/video.m3u8" + "?" + queryParams
-      const baseUrl = `https://${this.cloudfrontCustomDomain}/${projectId}`;
+      const baseUrl = `https://${this.cloudfrontDomain}/${projectId}`;
       const params = new URLSearchParams({
         "Policy": Buffer.from(policy).toString("base64url"),
         "Signature": signature,
@@ -65,6 +64,7 @@ export class UrlSigner {
   }
 
   private createPolicy(resource: string, expires: number): string {
+    // CloudFront requires compact JSON (no whitespace) for signed URL policies
     return JSON.stringify({
       Statement: [
         {
@@ -75,7 +75,7 @@ export class UrlSigner {
           },
         },
       ],
-    });
+    }, null, 0); // null replacer, 0 spaces for compact JSON
   }
 
   private createSignature(policy: string): string {

@@ -1,19 +1,17 @@
 export class Config {
   readonly projectsTable: string;
-  readonly cloudfrontDistributionDomain: string; // For policy resource (CloudFront requirement)
-  readonly cloudfrontCustomDomain: string; // For baseUrl (user-friendly)
+  readonly cloudfrontDomain: string; // Domain for both policy and baseUrl
   readonly cfKeyPairId: string;
   readonly cfPrivateKey: string;
   readonly urlExpiresInSeconds: number;
 
   constructor() {
     this.projectsTable = this.getRequiredEnv("PROJECTS_TABLE");
-    // Policy resource MUST use distribution domain (CloudFront requirement)
-    this.cloudfrontDistributionDomain = this.getRequiredEnv("CLOUDFRONT_DOMAIN");
-    // Base URL uses custom domain for user-friendly URLs
-    this.cloudfrontCustomDomain =
+    // Use custom domain if available, otherwise fallback to distribution domain
+    // Policy resource MUST match the domain used in the actual request URL
+    this.cloudfrontDomain =
       this.getOptionalEnv("CLOUDFRONT_CUSTOM_DOMAIN") ||
-      this.cloudfrontDistributionDomain;
+      this.getRequiredEnv("CLOUDFRONT_DOMAIN");
     this.cfKeyPairId = this.getRequiredEnv("CF_KEY_PAIR_ID");
     this.cfPrivateKey = this.getRequiredEnv("CF_PRIVATE_KEY");
     const defaultExpiration = 600; // 10 minutes (short TTL as per requirements)

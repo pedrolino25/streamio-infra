@@ -18,8 +18,7 @@ export class SignedUrlHandler {
       this.config.projectsTable
     );
     this.urlSigner = new UrlSigner(
-      this.config.cloudfrontDistributionDomain,
-      this.config.cloudfrontCustomDomain,
+      this.config.cloudfrontDomain,
       this.config.cfKeyPairId,
       this.config.cfPrivateKey
     );
