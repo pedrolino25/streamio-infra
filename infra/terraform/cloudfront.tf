@@ -11,6 +11,42 @@ resource "aws_cloudfront_origin_access_control" "oac" {
 }
 
 ############################################
+# Cache Policy (HLS Optimized)
+# Optimized for HLS streaming with short TTL for manifests and long TTL for segments
+############################################
+resource "aws_cloudfront_cache_policy" "hls_optimized" {
+  name        = "${local.project_name}-${var.environment}-hls-cache-policy"
+  comment     = "HLS-optimized cache policy: short TTL for .m3u8 manifests, long TTL for .ts/.m4s segments"
+  default_ttl = 3600      # 1 hour default (used when origin doesn't specify Cache-Control)
+  max_ttl     = 31536000  # 1 year maximum (for immutable video segments)
+  min_ttl     = 0         # Allow no-cache (for .m3u8 manifests that need frequent updates)
+
+  parameters_in_cache_key_and_forwarded_to_origin {
+    # Enable compression for better performance
+    enable_accept_encoding_gzip   = true
+    enable_accept_encoding_brotli = true
+
+    # Cookies are validated at CloudFront edge (signed cookies), not forwarded to S3
+    cookies_config {
+      cookie_behavior = "none"
+    }
+
+    # Query strings not needed for OAC (signed cookies handle auth at edge)
+    query_strings_config {
+      query_string_behavior = "none"
+    }
+
+    # Forward only headers needed for compression and content negotiation
+    headers_config {
+      header_behavior = "whitelist"
+      headers {
+        items = ["Accept", "Accept-Encoding", "Origin"]
+      }
+    }
+  }
+}
+
+############################################
 # Response Headers Policy (CORS)
 ############################################
 resource "aws_cloudfront_response_headers_policy" "cors" {
@@ -90,28 +126,19 @@ resource "aws_cloudfront_distribution" "cdn" {
     compress = true
 
     # 🔐 Enforce signed requests via trusted key groups
+    # Signed cookies are validated at CloudFront edge (viewer layer), not forwarded to S3
     trusted_key_groups = local.cloudfront_trusted_key_groups
 
     # 🌐 CORS headers for cross-origin video playback
     response_headers_policy_id = aws_cloudfront_response_headers_policy.cors.id
 
-    # 🔑 REQUIRED for signed cookies - forward all cookies to origin
-    # This ensures CloudFront validates the signed cookies on each request
-    forwarded_values {
-      query_string = true
-
-      cookies {
-        forward = "all"
-      }
-    }
-
-    # Cache settings optimized for HLS:
-    # - min_ttl=0: Allow no-cache headers from origin
-    # - default_ttl: Short for manifest files, longer for segments (handled by origin headers)
-    # - max_ttl: Maximum cache time for video segments
-    min_ttl     = 0
-    default_ttl = 86400    # 24 hours for video segments (optimize CDN performance)
-    max_ttl     = 31536000 # 1 year (maximum allowed)
+    # 📦 Custom cache policy optimized for HLS streaming
+    # - min_ttl=0: Allows no-cache for .m3u8 manifests (frequent updates)
+    # - default_ttl=3600: 1 hour default when origin doesn't specify Cache-Control
+    # - max_ttl=31536000: 1 year maximum for immutable .ts/.m4s segments
+    # Respects origin Cache-Control headers, so S3 can set different TTLs per file type
+    # Does not forward cookies or query strings to S3 (signed cookies validated at edge only)
+    cache_policy_id = aws_cloudfront_cache_policy.hls_optimized.id
   }
 
   ##########################################
