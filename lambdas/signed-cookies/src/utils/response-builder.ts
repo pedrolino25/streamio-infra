@@ -1,13 +1,15 @@
-import { ApiGatewayResponse, SignedCookies } from "../types";
+import { ApiGatewayEvent, ApiGatewayResponse, SignedCookies } from "../types";
 
 export class ResponseBuilder {
   static success(
     expiresAt: number,
     cookies: SignedCookies,
-    domain?: string
+    domain?: string,
+    origin?: string
   ): ApiGatewayResponse {
     const cookieAttributes = this.buildCookieAttributes(domain);
     const setCookieHeaders = this.buildCookieHeaders(cookies, cookieAttributes);
+    const corsHeaders = this.buildCorsHeaders(origin);
 
     return {
       statusCode: 200,
@@ -18,10 +20,7 @@ export class ResponseBuilder {
       }),
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, x-api-key",
-        "Access-Control-Allow-Credentials": "false",
+        ...corsHeaders,
         "Access-Control-Expose-Headers": "Set-Cookie",
       },
       multiValueHeaders: {
@@ -30,17 +29,41 @@ export class ResponseBuilder {
     };
   }
 
-  static error(statusCode: number, message: string): ApiGatewayResponse {
+  static error(statusCode: number, message: string, origin?: string): ApiGatewayResponse {
+    const corsHeaders = this.buildCorsHeaders(origin);
     return {
       statusCode,
       body: JSON.stringify({ error: message }),
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, x-api-key",
-        "Access-Control-Allow-Credentials": "false",
+        ...corsHeaders,
       },
+    };
+  }
+
+  static options(origin?: string): ApiGatewayResponse {
+    const corsHeaders = this.buildCorsHeaders(origin);
+    return {
+      statusCode: 200,
+      body: "",
+      headers: {
+        ...corsHeaders,
+        "Access-Control-Max-Age": "86400",
+      },
+    };
+  }
+
+  private static buildCorsHeaders(origin?: string): Record<string, string> {
+    // When credentials are included, we must use a specific origin, not "*"
+    // If no origin is provided, default to "*" (but credentials won't work)
+    const allowOrigin = origin || "*";
+    const allowCredentials = origin ? "true" : "false";
+
+    return {
+      "Access-Control-Allow-Origin": allowOrigin,
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, x-api-key",
+      "Access-Control-Allow-Credentials": allowCredentials,
     };
   }
 

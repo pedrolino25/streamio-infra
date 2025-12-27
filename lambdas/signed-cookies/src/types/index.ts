@@ -6,6 +6,7 @@ export interface ApiGatewayResponse {
 }
 
 export interface ApiGatewayEvent {
+  httpMethod?: string;
   headers?: Record<string, string>;
   queryStringParameters?: Record<string, string> | null;
 }
