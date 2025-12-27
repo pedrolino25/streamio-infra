@@ -36,7 +36,7 @@ export class UrlSigner {
 
     // IMPORTANT:
     // baseUrl must be the REAL requested path (index.m3u8 lives below this)
-    const baseUrl = `https://${this.cloudfrontDomain}/${projectId}/v/0/index.m3u8`;
+    const baseUrl = `https://${this.cloudfrontDomain}/${projectId}`;
 
     // IMPORTANT:
     // DO NOT encode Signature or Policy again
