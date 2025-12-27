@@ -91,6 +91,8 @@ This platform enables multiple projects to:
 | **S3 RAW**            | Private bucket for initial video uploads         |
 | **S3 PROCESSED**      | Private bucket for processed videos              |
 | **CloudFront**        | CDN with signed cookies for secure playback      |
+| **Route53**           | DNS management and domain routing                |
+| **ACM**               | SSL/TLS certificates for HTTPS (us-east-1)       |
 | **DynamoDB**          | Project/tenant management and API key resolution |
 | **CloudWatch**        | Logs and observability                           |
 
@@ -164,6 +166,10 @@ x-api-key: YOUR_API_KEY
 
 **Note:** Cookies are automatically set via `Set-Cookie` headers. Once set, you can access any CloudFront URL under your project path without additional authentication.
 
+**CloudFront Domain:** The signed cookies work with your environment-specific CloudFront domain:
+- Production: `https://cdn.example.com`
+- Development: `https://cdn-dev.example.com`
+
 ---
 
 ### Processing Flow
@@ -219,12 +225,61 @@ aws dynamodb create-table \
 
 **Note:** Update the `backend.tf` file in `infra/terraform/` to use your bucket name and region.
 
+### DNS & Domain Setup
+
+The platform supports multi-environment DNS management with automatic HTTPS via ACM certificates.
+
+#### Domain Configuration
+
+- **Root Domain**: Provided via `DOMAIN_NAME` GitHub secret (e.g., `example.com`)
+- **Environment-Scoped Subdomains**:
+  - **Production** (`main` branch): `cdn.example.com`
+  - **Development** (`dev` branch): `cdn-dev.example.com`
+
+#### Initial Domain Setup
+
+1. **Deploy the infrastructure** (first deployment will create the Route53 hosted zone)
+2. **Get Route53 nameservers** from Terraform outputs:
+   ```bash
+   terraform output route53_nameservers
+   ```
+3. **Configure your domain registrar** to use the Route53 nameservers
+4. **Wait for DNS propagation** (usually 5-30 minutes)
+5. **ACM certificate validation** will complete automatically via Route53 DNS records
+
+#### Terraform Variables
+
+When deploying manually, you need to provide:
+
+- `domain_name` - Root domain name (e.g., `example.com`)
+- `environment` - Environment name (`dev` or `prod`)
+
+Example:
+```bash
+terraform apply \
+  -var="domain_name=example.com" \
+  -var="environment=dev" \
+  -var="worker_image=..."
+```
+
+#### DNS Resources
+
+Terraform automatically manages:
+- ✅ **Route53 Hosted Zone** for the root domain
+- ✅ **ACM Certificate** in `us-east-1` (required for CloudFront)
+- ✅ **DNS Validation Records** for certificate validation
+- ✅ **Route53 Alias Records** pointing subdomains to CloudFront
+- ✅ **CloudFront Distribution** with custom domain and HTTPS
+
+**Note:** If deploying multiple environments with separate Terraform states, the first deployment will create the hosted zone. Subsequent environments should use a data source to reference the existing zone to avoid duplicates.
+
 ### GitHub Secrets
 
 For automatic deployment, configure these secrets in your GitHub repository:
 
 - `AWS_ACCESS_KEY_ID` - AWS access key
 - `AWS_SECRET_ACCESS_KEY` - AWS secret key
+- `DOMAIN_NAME` - Root domain name (e.g., `example.com`)
 - `CLOUDFRONT_PUBLIC_KEY` - CloudFront public key (PEM format)
 - `CLOUDFRONT_PRIVATE_KEY` - CloudFront private key (PEM format)
 - `CLOUDFRONT_KEY_PAIR_ID` - CloudFront Key Pair ID (e.g., APKA... or K...) used for signing cookies
@@ -245,12 +300,25 @@ cd infra/terraform
 # Initialize Terraform
 terraform init
 
-# Review changes
-terraform plan
+# Review changes (with required variables)
+terraform plan \
+  -var="domain_name=example.com" \
+  -var="environment=dev" \
+  -var="worker_image=your-image-uri"
 
 # Apply changes
-terraform apply
+terraform apply \
+  -var="domain_name=example.com" \
+  -var="environment=dev" \
+  -var="worker_image=your-image-uri"
 ```
+
+After deployment, check the Route53 nameservers:
+```bash
+terraform output route53_nameservers
+```
+
+Configure these nameservers at your domain registrar to complete DNS setup.
 
 ---
 
