@@ -2,16 +2,16 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { S3Client } from "@aws-sdk/client-s3";
 import { Config } from "../config";
 import { ProjectService } from "../services/project.service";
-import { S3PresignerService } from "../services/s3-presigner.service";
+import { S3UploadService } from "../services/s3-upload.service";
 import { ApiGatewayEvent, ApiGatewayResponse } from "../types";
 import { RequestValidator } from "../utils/request-validator";
 import { ResponseBuilder } from "../utils/response-builder";
 import { S3KeyBuilder } from "../utils/s3-key-builder";
 
-export class UploadUrlHandler {
+export class UploadHandler {
   private readonly config: Config;
   private readonly projectService: ProjectService;
-  private readonly s3PresignerService: S3PresignerService;
+  private readonly s3UploadService: S3UploadService;
 
   constructor() {
     this.config = new Config();
@@ -19,10 +19,9 @@ export class UploadUrlHandler {
       new DynamoDBClient({}),
       this.config.projectsTable
     );
-    this.s3PresignerService = new S3PresignerService(
+    this.s3UploadService = new S3UploadService(
       new S3Client({}),
-      this.config.rawBucket,
-      this.config.uploadUrlExpiresIn
+      this.config.rawBucket
     );
   }
 
@@ -34,42 +33,42 @@ export class UploadUrlHandler {
         return ResponseBuilder.error(401, validationError);
       }
 
-      let requestBody;
-      try {
-        const body =
-          typeof event.body === "string" ? JSON.parse(event.body) : event.body;
-        requestBody = RequestValidator.validateRequestBody(
-          body,
-          this.config.allowedFileTypes
-        );
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Invalid request body";
-        return ResponseBuilder.error(400, message);
-      }
-
       const project = await this.projectService.getProject(apiKey!);
       if (!project) {
         return ResponseBuilder.error(403, "Invalid API key");
       }
 
+      // Parse multipart/form-data or binary data
+      const uploadData = await RequestValidator.parseUploadRequest(
+        event,
+        this.config.allowedFileTypes
+      );
+      if (!uploadData) {
+        return ResponseBuilder.error(
+          400,
+          "Invalid request. Expected multipart/form-data with 'file' field or binary data with X-Filename header."
+        );
+      }
+
       const s3Key = S3KeyBuilder.build(
         project.projectName!,
-        requestBody.path,
-        requestBody.filename
+        uploadData.path || "",
+        uploadData.filename
       );
 
-      const uploadUrl = await this.s3PresignerService.generatePresignedUrl(
+      // Upload file directly to S3
+      await this.s3UploadService.uploadFile(
         s3Key,
-        requestBody.contentType
+        uploadData.fileBuffer,
+        uploadData.contentType
       );
 
       return ResponseBuilder.success({
-        uploadUrl,
         s3Key,
+        message: "File uploaded successfully",
       });
     } catch (error) {
-      console.error("Upload URL generation error:", error);
+      console.error("Upload error:", error);
       return ResponseBuilder.error(
         500,
         error instanceof Error ? error.message : "Internal server error"

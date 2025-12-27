@@ -1,7 +1,7 @@
-import { UploadUrlHandler } from "./handlers/upload-url.handler";
+import { UploadHandler } from "./handlers/upload.handler";
 import { ApiGatewayEvent, ApiGatewayResponse } from "./types";
 
-const handlerInstance = new UploadUrlHandler();
+const handlerInstance = new UploadHandler();
 
 export const handler = async (
   event: ApiGatewayEvent

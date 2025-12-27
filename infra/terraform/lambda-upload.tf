@@ -3,7 +3,7 @@ resource "aws_lambda_function" "upload" {
   role          = aws_iam_role.lambda.arn
   runtime       = "nodejs20.x"
   handler       = "index.handler"
-  filename      = "../../lambdas/upload-url/dist/upload-url.zip"
+  filename      = "../../lambdas/upload/dist/upload.zip"
 
   environment {
     variables = {

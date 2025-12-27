@@ -26,6 +26,18 @@ resource "aws_s3_bucket_cors_configuration" "raw" {
   }
 }
 
+############################################
+# Block all public access for raw bucket (enforce private bucket)
+############################################
+resource "aws_s3_bucket_public_access_block" "raw" {
+  bucket = aws_s3_bucket.raw.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
 resource "aws_s3_bucket" "processed" {
   bucket = "${local.project_name}-processed-${var.environment}"
 }

@@ -41,13 +41,11 @@ const ALLOWED_VIDEO_TYPES = [
 export class Config {
   readonly rawBucket: string;
   readonly projectsTable: string;
-  readonly uploadUrlExpiresIn: number;
   readonly allowedFileTypes: Set<string>;
 
   constructor() {
     this.rawBucket = this.getRequiredEnv("RAW_BUCKET");
     this.projectsTable = this.getRequiredEnv("PROJECTS_TABLE");
-    this.uploadUrlExpiresIn = 300;
     this.allowedFileTypes = new Set([
       ...ALLOWED_IMAGE_TYPES,
       ...ALLOWED_VIDEO_TYPES,

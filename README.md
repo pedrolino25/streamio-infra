@@ -10,7 +10,7 @@ A serverless, multi-tenant media processing platform built on AWS that enables s
 
 This platform enables multiple projects to:
 
-1. **Securely upload videos** via presigned S3 URLs
+1. **Securely upload videos** directly via HTTPS API
 2. **Automatic processing** with FFmpeg on ECS
 3. **Protected delivery** via CloudFront with signed URLs
 
@@ -36,7 +36,7 @@ This platform enables multiple projects to:
 ┌─────────────────────┐
 │  API Gateway        │
 │                     │
-│  POST /upload-url    → Presigned S3 PUT
+│  POST /upload        → Direct File Upload (Lambda → S3)
 │  POST /signed-url    → CloudFront Signed URLs
 └────┬────────────────┘
      │
@@ -85,7 +85,7 @@ This platform enables multiple projects to:
 | Component             | Description                                      |
 | --------------------- | ------------------------------------------------ |
 | **API Gateway**       | API Key authentication and request routing       |
-| **Lambda Upload**     | Generates presigned S3 URLs for secure uploads   |
+| **Lambda Upload**     | Handles direct file uploads via HTTPS API        |
 | **Lambda Dispatcher** | Triggers automatic processing on S3 events       |
 | **ECS RunTask**       | FFmpeg worker (scales to zero)                   |
 | **S3 RAW**            | Private bucket for initial video uploads         |
@@ -101,7 +101,7 @@ This platform enables multiple projects to:
 ## 🔐 Security Model
 
 - Each client receives a unique **API Key** that resolves to a project in DynamoDB
-- **Upload**: Only via presigned S3 URLs (no direct S3 access)
+- **Upload**: Only via secure HTTPS API endpoint (no direct S3 access, bucket remains private)
 - **Playback**: Only via CloudFront Signed URLs with wildcard policies (Netflix/YouTube model)
 - All S3 paths are automatically prefixed with `{project_id}/`
 
@@ -111,35 +111,56 @@ This platform enables multiple projects to:
 
 ### Upload Video
 
-Generate a presigned URL for video upload.
+Upload files directly via HTTPS API. The file is uploaded through the API Gateway to Lambda, which then stores it in the private S3 bucket.
 
-**Endpoint:** `POST /upload-url`
+**Endpoint:** `POST /upload`
 
 **Headers:**
 
 ```
 x-api-key: YOUR_API_KEY
+Content-Type: multipart/form-data
 ```
 
-**Request Body:**
+**Request Body (multipart/form-data):**
 
-```json
-{
-  "filename": "video.mp4",
-  "path": "uploads/2025/event/"
-}
+- `file` (required): The file to upload
+- `path` (optional): Custom path prefix for the file (e.g., `uploads/2025/event/`)
+
+**Example using curl:**
+
+```bash
+curl -X POST https://api.example.com/upload \
+  -H "x-api-key: YOUR_API_KEY" \
+  -F "file=@video.mp4" \
+  -F "path=uploads/2025/event/"
+```
+
+**Alternative: Binary upload with headers:**
+
+```bash
+curl -X POST https://api.example.com/upload \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: video/mp4" \
+  -H "X-Filename: video.mp4" \
+  -H "X-Path: uploads/2025/event/" \
+  --data-binary @video.mp4
 ```
 
 **Response:**
 
 ```json
 {
-  "uploadUrl": "https://s3-presigned-url...",
-  "s3Key": "project123/uploads/2025/event/video.mp4"
+  "s3Key": "project123/uploads/2025/event/video.mp4",
+  "message": "File uploaded successfully"
 }
 ```
 
-**Next Step:** Client performs `PUT` directly to `uploadUrl` with the video file.
+**Supported File Types:**
+- Images: JPEG, PNG, GIF, WebP, BMP, SVG, TIFF, ICO, AVIF, HEIC, HEIF
+- Videos: MP4, MPEG, QuickTime, AVI, WMV, WebM, OGG, MKV, FLV, 3GP, and more
+
+**Note:** API Gateway has a 10MB payload limit. For larger files, consider implementing multipart uploads or using S3 Multipart Upload API.
 
 ---
 

@@ -64,7 +64,7 @@ jobs:
       - name: Build Lambda functions
         run: |
           set -e
-          for lambda in upload-url s3-dispatcher signed-url; do
+          for lambda in upload s3-dispatcher signed-url; do
             echo "Building lambda: $lambda"
             cd lambdas/$lambda
             npm install
