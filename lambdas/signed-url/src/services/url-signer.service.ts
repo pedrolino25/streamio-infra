@@ -32,8 +32,8 @@ export class UrlSigner {
       const policyBase64 = Buffer.from(policy)
         .toString("base64")
         .replace(/\+/g, "-")
-        .replace(/\//g, "~")
-        .replace(/=/g, "_");
+        .replace(/\//g, "_")
+        .replace(/=+$/, "");
 
       const queryParams = `Policy=${policyBase64}&Signature=${signature}&Key-Pair-Id=${encodeURIComponent(
         this.keyPairId
@@ -77,23 +77,16 @@ export class UrlSigner {
   }
 
   private createSignature(policy: string): string {
-    try {
-      const privateKey = this.privateKey.replace(/\\n/g, "\n");
+    const privateKey = this.privateKey.replace(/\\n/g, "\n");
 
-      const signatureBase64 = crypto
-        .createSign("RSA-SHA256")
-        .update(policy)
-        .sign(privateKey, "base64");
+    const signatureBase64 = crypto
+      .createSign("RSA-SHA1")
+      .update(policy)
+      .sign(privateKey, "base64");
 
-      return signatureBase64
-        .replace(/\+/g, "-")
-        .replace(/\//g, "~")
-        .replace(/=/g, "_");
-    } catch (error) {
-      console.error("Signature creation error:", {
-        error: error instanceof Error ? error.message : String(error),
-      });
-      throw new Error("Invalid private key or signing configuration");
-    }
+    return signatureBase64
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
   }
 }
