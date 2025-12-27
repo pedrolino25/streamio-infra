@@ -65,23 +65,17 @@ export class SignedUrlHandler {
       }
 
       const expires = this.calculateExpiration();
+      const projectIdentifier = project.projectName!;
       const { baseUrl, queryParams } = this.urlSigner.sign(
-        project.projectName!,
+        projectIdentifier,
         expires
       );
-
-      this.logInfo("Signed URL generated successfully", {
-        requestId,
-        projectId: project.projectId,
-        projectName: project.projectName,
-        expires,
-      });
 
       return ResponseBuilder.success(
         baseUrl,
         queryParams,
         expires,
-        project.projectName!,
+        projectIdentifier,
         origin
       );
     } catch (error) {
