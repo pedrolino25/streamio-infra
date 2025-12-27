@@ -32,8 +32,8 @@ export class UrlSigner {
       const policyBase64 = Buffer.from(policy)
         .toString("base64")
         .replace(/\+/g, "-")
-        .replace(/\//g, "_")
-        .replace(/=/g, "~");
+        .replace(/\//g, "~")
+        .replace(/=/g, "_");
 
       const queryParams = `Policy=${policyBase64}&Signature=${signature}&Key-Pair-Id=${encodeURIComponent(
         this.keyPairId
@@ -87,8 +87,8 @@ export class UrlSigner {
 
       return signatureBase64
         .replace(/\+/g, "-")
-        .replace(/\//g, "_")
-        .replace(/=/g, "~");
+        .replace(/\//g, "~")
+        .replace(/=/g, "_");
     } catch (error) {
       console.error("Signature creation error:", {
         error: error instanceof Error ? error.message : String(error),
