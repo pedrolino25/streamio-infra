@@ -10,10 +10,13 @@ export class Config {
     this.cloudfrontDomain = this.getRequiredEnv("CLOUDFRONT_DOMAIN");
     this.cfKeyPairId = this.getRequiredEnv("CF_KEY_PAIR_ID");
     this.cfPrivateKey = this.getRequiredEnv("CF_PRIVATE_KEY");
-    this.urlExpiresInSeconds = this.getNumberEnv(
-      "URL_EXPIRES_IN_SECONDS",
-      86400
+    const defaultExpiration = 86400; // 24 hours
+    const expiration = this.getNumberEnv(
+      "COOKIE_EXPIRES_IN_SECONDS",
+      defaultExpiration
     );
+
+    this.urlExpiresInSeconds = expiration;
   }
 
   private getRequiredEnv(key: string): string {

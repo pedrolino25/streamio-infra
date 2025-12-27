@@ -1,11 +1,11 @@
 {
-  "name": "playback-url",
+  "name": "signed-cookies",
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
     "clean": "rm -rf dist",
     "build": "npm run clean && esbuild src/index.ts --bundle --platform=node --target=node18 --format=cjs --outfile=dist/index.js --external:@aws-sdk/*",
-    "zip": "npm run build && cp package.json dist/ && cd dist && npm install --production && zip -r playback-url.zip index.js package.json node_modules"
+    "zip": "npm run build && cp package.json dist/ && cd dist && npm install --production && zip -r signed-cookies.zip index.js package.json node_modules"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.540.0"

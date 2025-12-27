@@ -1,8 +1,13 @@
 ############################################
-# Origin Access Identity (S3 protection)
+# Origin Access Control (OAC) for S3 protection
+# OAC is the modern replacement for OAI
 ############################################
-resource "aws_cloudfront_origin_access_identity" "oai" {
-  comment = "OAI for processed video bucket"
+resource "aws_cloudfront_origin_access_control" "oac" {
+  name                              = "${local.project_name}-${var.environment}-oac"
+  description                       = "OAC for processed video bucket"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
 }
 
 ############################################
@@ -12,7 +17,8 @@ resource "aws_cloudfront_response_headers_policy" "cors" {
   name = "cors-headers-policy"
 
   cors_config {
-    access_control_allow_credentials = false
+    # Must be true when using cookies for authentication
+    access_control_allow_credentials = true
 
     access_control_allow_headers {
       items = ["*"]
@@ -45,19 +51,17 @@ resource "aws_cloudfront_distribution" "cdn" {
   default_root_object = ""
 
   ##########################################
-  # Origin (S3)
+  # Origin (S3) with OAC
   ##########################################
   origin {
-    domain_name = aws_s3_bucket.processed.bucket_regional_domain_name
-    origin_id   = "processed"
-
-    s3_origin_config {
-      origin_access_identity = aws_cloudfront_origin_access_identity.oai.cloudfront_access_identity_path
-    }
+    domain_name              = aws_s3_bucket.processed.bucket_regional_domain_name
+    origin_id                = "processed"
+    origin_access_control_id = aws_cloudfront_origin_access_control.oac.id
   }
 
   ##########################################
   # Default Cache Behavior (SIGNED COOKIES)
+  # Optimized for HLS streaming (.m3u8, .ts, .m4s)
   ##########################################
   default_cache_behavior {
     target_origin_id       = "processed"
@@ -68,13 +72,14 @@ resource "aws_cloudfront_distribution" "cdn" {
 
     compress = true
 
-    # 🔐 Enforce signed requests
+    # 🔐 Enforce signed requests via trusted key groups
     trusted_key_groups = local.cloudfront_trusted_key_groups
 
-    # 🌐 CORS headers
+    # 🌐 CORS headers for cross-origin video playback
     response_headers_policy_id = aws_cloudfront_response_headers_policy.cors.id
 
-    # 🔑 REQUIRED for signed cookies
+    # 🔑 REQUIRED for signed cookies - forward all cookies to origin
+    # This ensures CloudFront validates the signed cookies on each request
     forwarded_values {
       query_string = true
 
@@ -83,9 +88,13 @@ resource "aws_cloudfront_distribution" "cdn" {
       }
     }
 
+    # Cache settings optimized for HLS:
+    # - min_ttl=0: Allow no-cache headers from origin
+    # - default_ttl: Short for manifest files, longer for segments (handled by origin headers)
+    # - max_ttl: Maximum cache time for video segments
     min_ttl     = 0
-    default_ttl = 3600
-    max_ttl     = 86400
+    default_ttl = 86400    # 24 hours for video segments (optimize CDN performance)
+    max_ttl     = 31536000 # 1 year (maximum allowed)
   }
 
   ##########################################

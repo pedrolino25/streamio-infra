@@ -12,7 +12,7 @@ This platform enables multiple projects to:
 
 1. **Securely upload videos** via presigned S3 URLs
 2. **Automatic processing** with FFmpeg on ECS
-3. **Protected delivery** via CloudFront with signed URLs
+3. **Protected delivery** via CloudFront with signed cookies
 
 ### Key Features
 
@@ -37,7 +37,7 @@ This platform enables multiple projects to:
 │  API Gateway        │
 │                     │
 │  POST /upload-url    → Presigned S3 PUT
-│  POST /playback-url  → CloudFront Signed URL
+│  POST /signed-cookies → CloudFront Signed Cookies
 └────┬────────────────┘
      │
      ▼
@@ -90,7 +90,7 @@ This platform enables multiple projects to:
 | **ECS RunTask**       | FFmpeg worker (scales to zero)                   |
 | **S3 RAW**            | Private bucket for initial video uploads         |
 | **S3 PROCESSED**      | Private bucket for processed videos              |
-| **CloudFront**        | CDN with signed URLs for secure playback         |
+| **CloudFront**        | CDN with signed cookies for secure playback      |
 | **DynamoDB**          | Project/tenant management and API key resolution |
 | **CloudWatch**        | Logs and observability                           |
 
@@ -100,7 +100,7 @@ This platform enables multiple projects to:
 
 - Each client receives a unique **API Key** that resolves to a project in DynamoDB
 - **Upload**: Only via presigned S3 URLs (no direct S3 access)
-- **Playback**: Only via CloudFront Signed URLs with expiration timestamps
+- **Playback**: Only via CloudFront Signed Cookies with expiration timestamps
 - All S3 paths are automatically prefixed with `projects/{project_id}/`
 
 ---
@@ -141,11 +141,11 @@ x-api-key: YOUR_API_KEY
 
 ---
 
-### Get Playback URL
+### Get Signed Cookies
 
-Get a signed CloudFront URL for video playback.
+Get CloudFront signed cookies for secure video playback. Cookies allow access to all HLS content under the project path.
 
-**Endpoint:** `POST /playback-url`
+**Endpoint:** `POST /signed-cookies`
 
 **Headers:**
 
@@ -153,19 +153,16 @@ Get a signed CloudFront URL for video playback.
 x-api-key: YOUR_API_KEY
 ```
 
-**Query Parameters:**
-
-```
-key=processed/project123/uploads/2025/event/video.mp4
-```
-
 **Response:**
 
 ```json
 {
-  "signedUrl": "https://cloudfront.net/processed/project123/uploads/2025/event/video.mp4?Expires=...&Signature=...&Key-Pair-Id=..."
+  "expiresAt": 1704067200,
+  "message": "Signed cookies set successfully. Cookies are now available for CloudFront requests."
 }
 ```
+
+**Note:** Cookies are automatically set via `Set-Cookie` headers. Once set, you can access any CloudFront URL under your project path without additional authentication.
 
 ---
 
@@ -175,7 +172,7 @@ key=processed/project123/uploads/2025/event/video.mp4
 2. S3 event triggers Lambda Dispatcher
 3. Dispatcher starts ECS task for processing
 4. Worker downloads, processes, and uploads to PROCESSED bucket
-5. Processed video available via CloudFront signed URLs
+5. Processed video available via CloudFront signed cookies
 
 ---
 

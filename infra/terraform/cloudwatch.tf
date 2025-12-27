@@ -21,8 +21,8 @@ resource "aws_cloudwatch_log_group" "lambda_dispatcher" {
   }
 }
 
-resource "aws_cloudwatch_log_group" "lambda_playback" {
-  name              = "/aws/lambda/${local.project_name}-playback-${var.environment}"
+resource "aws_cloudwatch_log_group" "lambda_signed_cookies" {
+  name              = "/aws/lambda/${local.project_name}-signed-cookies-${var.environment}"
   retention_in_days = 14
 
   lifecycle {

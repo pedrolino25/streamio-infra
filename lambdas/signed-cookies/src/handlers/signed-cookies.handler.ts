@@ -1,14 +1,13 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { ApiGatewayEvent, ApiGatewayResponse } from "../types";
 import { Config } from "../config";
-import { ProjectService } from "../services/project.service";
 import { CookieSigner } from "../services/cookie-signer.service";
+import { ProjectService } from "../services/project.service";
+import { ApiGatewayEvent, ApiGatewayResponse } from "../types";
 import { ProjectIdentifierBuilder } from "../utils/project-identifier";
-import { PathBuilder } from "../utils/path-builder";
 import { RequestValidator } from "../utils/request-validator";
 import { ResponseBuilder } from "../utils/response-builder";
 
-export class PlaybackUrlHandler {
+export class SignedCookiesHandler {
   private readonly config: Config;
   private readonly projectService: ProjectService;
   private readonly cookieSigner: CookieSigner;
@@ -34,12 +33,6 @@ export class PlaybackUrlHandler {
         return ResponseBuilder.error(401, validationError);
       }
 
-      const userPath = event.queryStringParameters?.key;
-      const pathError = RequestValidator.validatePath(userPath);
-      if (pathError) {
-        return ResponseBuilder.error(400, pathError);
-      }
-
       const project = await this.projectService.getProject(apiKey!);
       if (!project) {
         return ResponseBuilder.error(403, "Invalid API key");
@@ -50,19 +43,14 @@ export class PlaybackUrlHandler {
         project.projectName
       );
 
+      const wildcardPath = `/projects/${projectIdentifier}/*`;
+
       const expires = this.calculateExpiration();
-      const fullPath = PathBuilder.buildFullPath(projectIdentifier, userPath!);
-      const wildcardPath = PathBuilder.buildWildcardPath(
-        projectIdentifier,
-        userPath!
-      );
-
       const cookies = this.cookieSigner.sign(wildcardPath, expires);
-      const cloudfrontUrl = `https://${this.config.cloudfrontDomain}${fullPath}`;
 
-      return ResponseBuilder.success(cloudfrontUrl, expires, cookies);
+      return ResponseBuilder.success(expires, cookies);
     } catch (error) {
-      console.error("Playback URL generation error:", error);
+      console.error("Signed cookies generation error:", error);
       return ResponseBuilder.error(
         500,
         error instanceof Error ? error.message : "Internal server error"
@@ -78,4 +66,3 @@ export class PlaybackUrlHandler {
     return Math.floor(Date.now() / 1000) + this.config.urlExpiresInSeconds;
   }
 }
-

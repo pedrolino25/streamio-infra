@@ -30,6 +30,55 @@ resource "aws_s3_bucket" "processed" {
   bucket = "${local.project_name}-processed-${var.environment}"
 }
 
+############################################
+# S3 Bucket Policy - Allow CloudFront OAC access only
+# This ensures S3 remains private and only accessible via CloudFront
+############################################
+data "aws_iam_policy_document" "processed_bucket_policy" {
+  statement {
+    sid    = "AllowCloudFrontOACAccess"
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["cloudfront.amazonaws.com"]
+    }
+
+    actions = [
+      "s3:GetObject"
+    ]
+
+    resources = [
+      "${aws_s3_bucket.processed.arn}/*"
+    ]
+
+    condition {
+      test     = "StringEquals"
+      variable = "AWS:SourceArn"
+      values   = [aws_cloudfront_distribution.cdn.arn]
+    }
+  }
+}
+
+resource "aws_s3_bucket_policy" "processed" {
+  bucket = aws_s3_bucket.processed.id
+  policy = data.aws_iam_policy_document.processed_bucket_policy.json
+
+  depends_on = [aws_cloudfront_distribution.cdn]
+}
+
+############################################
+# Block all public access (enforce private bucket)
+############################################
+resource "aws_s3_bucket_public_access_block" "processed" {
+  bucket = aws_s3_bucket.processed.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
 resource "aws_s3_bucket_notification" "raw_bucket_notification" {
   bucket = aws_s3_bucket.raw.id
 
