@@ -26,19 +26,21 @@ export class UploadHandler {
   }
 
   async handle(event: ApiGatewayEvent): Promise<ApiGatewayResponse> {
+    if (event.httpMethod === "OPTIONS") {
+      return ResponseBuilder.options();
+    }
+
     try {
-      const apiKey = this.extractApiKey(event);
-      const validationError = RequestValidator.validateApiKey(apiKey);
-      if (validationError) {
-        return ResponseBuilder.error(401, validationError);
+      const apiKey = this.getHeader(event, "x-api-key", "X-Api-Key");
+      if (!apiKey) {
+        return ResponseBuilder.error(401, "Missing API key");
       }
 
-      const project = await this.projectService.getProject(apiKey!);
+      const project = await this.projectService.getProject(apiKey);
       if (!project) {
         return ResponseBuilder.error(403, "Invalid API key");
       }
 
-      // Parse multipart/form-data or binary data
       const uploadData = await RequestValidator.parseUploadRequest(
         event,
         this.config.allowedFileTypes
@@ -56,7 +58,6 @@ export class UploadHandler {
         uploadData.filename
       );
 
-      // Upload file directly to S3
       await this.s3UploadService.uploadFile(
         s3Key,
         uploadData.fileBuffer,
@@ -76,7 +77,15 @@ export class UploadHandler {
     }
   }
 
-  private extractApiKey(event: ApiGatewayEvent): string | undefined {
-    return event.headers?.["x-api-key"] || event.headers?.["X-Api-Key"];
+  private getHeader(
+    event: ApiGatewayEvent,
+    ...keys: string[]
+  ): string | undefined {
+    const headers = event.headers || {};
+    for (const key of keys) {
+      const value = headers[key];
+      if (value) return value;
+    }
+    return undefined;
   }
 }

@@ -6,15 +6,13 @@ export interface ApiGatewayResponse {
 }
 
 export interface ApiGatewayEvent {
+  httpMethod?: string;
   headers?: Record<string, string>;
   body?: string | object;
   isBase64Encoded?: boolean;
-}
-
-export interface RequestBody {
-  filename: string;
-  path: string;
-  contentType: string;
+  requestContext?: {
+    requestId?: string;
+  };
 }
 
 export interface UploadData {
@@ -27,10 +25,5 @@ export interface UploadData {
 export interface Project {
   projectId: string;
   projectName?: string;
-}
-
-export interface UploadResponse {
-  s3Key: string;
-  message: string;
 }
 

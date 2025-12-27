@@ -60,10 +60,6 @@ export class MultipartParser {
 
         bb.on("field", (name, value) => {
           fields[name] = value;
-          // Update path in fileData if it was already processed
-          if (name === "path" && fileData) {
-            fileData.path = value;
-          }
         });
 
         bb.on("finish", () => {
