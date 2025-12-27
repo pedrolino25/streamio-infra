@@ -28,8 +28,8 @@ export class UrlSigner {
     const policyBase64 = Buffer.from(policy)
       .toString("base64")
       .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/, "");
+      .replace(/\//g, "~")
+      .replace(/=/g, "_");
 
     const signature = this.createSignature(policy);
 
@@ -70,7 +70,7 @@ export class UrlSigner {
 
     return signatureBase64
       .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/, "");
+      .replace(/\//g, "~")
+      .replace(/=/g, "_");
   }
 }
