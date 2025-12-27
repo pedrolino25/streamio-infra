@@ -1,14 +1,12 @@
 export class Config {
   readonly projectsTable: string;
-  readonly cloudfrontDomain: string; // Domain for both policy and baseUrl
+  readonly cloudfrontDomain: string;
   readonly cfKeyPairId: string;
   readonly cfPrivateKey: string;
   readonly urlExpiresInSeconds: number;
 
   constructor() {
     this.projectsTable = this.getRequiredEnv("PROJECTS_TABLE");
-    // Use custom domain if available, otherwise fallback to distribution domain
-    // Policy resource MUST match the domain used in the actual request URL
     this.cloudfrontDomain =
       this.getOptionalEnv("CLOUDFRONT_CUSTOM_DOMAIN") ||
       this.getRequiredEnv("CLOUDFRONT_DOMAIN");
@@ -42,4 +40,3 @@ export class Config {
     return isNaN(parsed) ? defaultValue : parsed;
   }
 }
-

@@ -19,9 +19,6 @@ export class ResponseBuilder {
         projectId,
         message:
           "Signed URL parameters generated successfully. Append queryParams to any file path under baseUrl.",
-        // Example usage:
-        // const videoUrl = `${baseUrl}/video.m3u8?${queryParams}`;
-        // const segmentUrl = `${baseUrl}/segments/segment001.ts?${queryParams}`;
       }),
       headers: {
         "Content-Type": "application/json",
@@ -69,12 +66,10 @@ export class ResponseBuilder {
   }
 
   private static buildCorsHeaders(origin?: string): Record<string, string> {
-    // Always use wildcard for CORS - no credentials needed
     return {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, x-api-key",
-      // Explicitly set credentials to false (not needed for signed URLs)
       "Access-Control-Allow-Credentials": "false",
     };
   }
