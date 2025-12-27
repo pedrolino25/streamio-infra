@@ -22,10 +22,6 @@ resource "aws_cloudfront_cache_policy" "hls_optimized" {
   min_ttl     = 0         # Allow no-cache (for .m3u8 manifests that need frequent updates)
 
   parameters_in_cache_key_and_forwarded_to_origin {
-    # Enable compression for better performance
-    enable_accept_encoding_gzip   = true
-    enable_accept_encoding_brotli = true
-
     # Cookies are validated at CloudFront edge (signed cookies), not forwarded to S3
     cookies_config {
       cookie_behavior = "none"
@@ -36,11 +32,11 @@ resource "aws_cloudfront_cache_policy" "hls_optimized" {
       query_string_behavior = "none"
     }
 
-    # Forward only headers needed for compression and content negotiation
+    # Forward minimal headers for CORS (HLS video segments are already compressed)
     headers_config {
       header_behavior = "whitelist"
       headers {
-        items = ["Accept", "Accept-Encoding", "Origin"]
+        items = ["Origin"]
       }
     }
   }
