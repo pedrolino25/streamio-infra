@@ -14,22 +14,36 @@ resource "aws_cloudfront_origin_access_control" "oac" {
 # Response Headers Policy (CORS)
 ############################################
 resource "aws_cloudfront_response_headers_policy" "cors" {
-  name = "cors-headers-policy"
+  name = "cors-headers-policy-${var.environment}"
 
   cors_config {
-    # Must be true when using cookies for authentication
-    access_control_allow_credentials = true
+    # CloudFront signed cookies are domain-scoped, so they work without CORS credentials
+    # Setting credentials=false allows wildcard origins, which is needed for public video streaming
+    # Cookies are automatically sent by browser to CloudFront domain regardless of CORS settings
+    access_control_allow_credentials = length(var.cloudfront_cors_origins) > 0
 
+    # When credentials=true, cannot use "*" - must specify explicit headers
+    # When credentials=false (default), can use wildcard
     access_control_allow_headers {
-      items = ["*"]
+      items = length(var.cloudfront_cors_origins) > 0 ? [
+        "Accept",
+        "Accept-Language",
+        "Content-Type",
+        "Range",
+        "Origin",
+        "Referer",
+        "Access-Control-Request-Method",
+        "Access-Control-Request-Headers"
+      ] : ["*"]
     }
 
     access_control_allow_methods {
       items = ["GET", "HEAD", "OPTIONS"]
     }
 
+    # Use explicit origins if provided (requires credentials=true), otherwise wildcard (credentials=false)
     access_control_allow_origins {
-      items = ["*"]
+      items = length(var.cloudfront_cors_origins) > 0 ? var.cloudfront_cors_origins : ["*"]
     }
 
     access_control_expose_headers {

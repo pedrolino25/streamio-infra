@@ -24,3 +24,9 @@ variable "cloudfront_key_pair_id" {
   default     = ""
   description = "CloudFront Key Pair ID (e.g., APKA... or K...) used for signing cookies. Required if using signed URLs/cookies."
 }
+
+variable "cloudfront_cors_origins" {
+  type        = list(string)
+  default     = []
+  description = "Allowed CORS origins for CloudFront. When empty, uses wildcard (*) with credentials=false. When provided, uses credentials=true."
+}
