@@ -1,13 +1,12 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { S3Client } from "@aws-sdk/client-s3";
-import { ApiGatewayEvent, ApiGatewayResponse } from "../types";
 import { Config } from "../config";
 import { ProjectService } from "../services/project.service";
 import { S3PresignerService } from "../services/s3-presigner.service";
-import { ProjectIdentifierBuilder } from "../utils/project-identifier";
-import { S3KeyBuilder } from "../utils/s3-key-builder";
+import { ApiGatewayEvent, ApiGatewayResponse } from "../types";
 import { RequestValidator } from "../utils/request-validator";
 import { ResponseBuilder } from "../utils/response-builder";
+import { S3KeyBuilder } from "../utils/s3-key-builder";
 
 export class UploadUrlHandler {
   private readonly config: Config;
@@ -54,13 +53,8 @@ export class UploadUrlHandler {
         return ResponseBuilder.error(403, "Invalid API key");
       }
 
-      const projectIdentifier = ProjectIdentifierBuilder.build(
-        project.projectId,
-        project.projectName
-      );
-
       const s3Key = S3KeyBuilder.build(
-        projectIdentifier,
+        project.projectName!,
         requestBody.path,
         requestBody.filename
       );
@@ -87,4 +81,3 @@ export class UploadUrlHandler {
     return event.headers?.["x-api-key"] || event.headers?.["X-Api-Key"];
   }
 }
-

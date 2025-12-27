@@ -3,7 +3,6 @@ import { Config } from "../config";
 import { CookieSigner } from "../services/cookie-signer.service";
 import { ProjectService } from "../services/project.service";
 import { ApiGatewayEvent, ApiGatewayResponse, ErrorCode } from "../types";
-import { ProjectIdentifierBuilder } from "../utils/project-identifier";
 import { RequestValidator } from "../utils/request-validator";
 import { ResponseBuilder } from "../utils/response-builder";
 
@@ -68,12 +67,7 @@ export class SignedCookiesHandler {
         );
       }
 
-      // Generate signed cookies
-      const projectIdentifier = ProjectIdentifierBuilder.build(
-        project.projectId,
-        project.projectName
-      );
-      const wildcardPath = `/${projectIdentifier}/*`;
+      const wildcardPath = `/${project.projectName}/*`;
       const expires = this.calculateExpiration();
       const cookies = this.cookieSigner.sign(wildcardPath, expires);
 
