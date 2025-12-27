@@ -86,8 +86,8 @@ export class ResponseBuilder {
       : undefined;
 
     return rootDomain
-      ? `Domain=${rootDomain}; Path=/; Secure; HttpOnly; SameSite=None`
-      : "Path=/; Secure; HttpOnly; SameSite=None";
+      ? `Domain=${rootDomain}; Path=/; Secure; SameSite=None`
+      : "Path=/; Secure; SameSite=None";
   }
 
   private static extractRootDomain(domain: string): string {
