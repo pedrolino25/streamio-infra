@@ -127,6 +127,7 @@ jobs:
         working-directory: infra/terraform
         env:
           TF_VAR_environment: ${{ env.ENVIRONMENT }}
+          TF_VAR_domain_name: ${{ secrets.DOMAIN_NAME }}
           TF_VAR_worker_image: ${{ env.WORKER_IMAGE }}
           TF_VAR_cloudfront_public_key: ${{ secrets.CLOUDFRONT_PUBLIC_KEY }}
           TF_VAR_cloudfront_private_key: ${{ secrets.CLOUDFRONT_PRIVATE_KEY }}

@@ -3,7 +3,23 @@ output "api_id" {
 }
 
 output "cloudfront_domain" {
-  value = aws_cloudfront_distribution.cdn.domain_name
+  value       = aws_cloudfront_distribution.cdn.domain_name
+  description = "CloudFront distribution domain name (CloudFront-generated)"
+}
+
+output "cloudfront_custom_domain" {
+  value       = local.cloudfront_domain
+  description = "Custom domain name for CloudFront (environment-scoped)"
+}
+
+output "route53_zone_id" {
+  value       = aws_route53_zone.root.zone_id
+  description = "Route53 hosted zone ID for the root domain"
+}
+
+output "route53_nameservers" {
+  value       = aws_route53_zone.root.name_servers
+  description = "Route53 nameservers for the root domain. Configure these at your domain registrar."
 }
 
 output "cognito_user_pool_id" {

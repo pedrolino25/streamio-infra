@@ -64,6 +64,9 @@ resource "aws_cloudfront_distribution" "cdn" {
   comment             = "Protected HLS distribution"
   default_root_object = ""
 
+  # Custom domain aliases
+  aliases = [local.cloudfront_domain]
+
   ##########################################
   # Origin (S3) with OAC
   ##########################################
@@ -121,10 +124,16 @@ resource "aws_cloudfront_distribution" "cdn" {
   }
 
   ##########################################
-  # Viewer Certificate
+  # Viewer Certificate (ACM)
   ##########################################
   viewer_certificate {
-    cloudfront_default_certificate = true
+    acm_certificate_arn      = aws_acm_certificate_validation.cloudfront.certificate_arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
   }
+
+  depends_on = [
+    aws_acm_certificate_validation.cloudfront
+  ]
 
 }

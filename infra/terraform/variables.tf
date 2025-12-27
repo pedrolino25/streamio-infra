@@ -1,5 +1,16 @@
 variable "environment" {
-  type = string
+  type        = string
+  description = "Environment name (dev or prod)"
+  
+  validation {
+    condition     = contains(["dev", "prod"], var.environment)
+    error_message = "Environment must be either 'dev' or 'prod'."
+  }
+}
+
+variable "domain_name" {
+  type        = string
+  description = "Root domain name (e.g., example.com)"
 }
 
 variable "worker_image" {
