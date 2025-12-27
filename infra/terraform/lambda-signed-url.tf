@@ -7,13 +7,15 @@ resource "aws_lambda_function" "signed_url" {
 
   environment {
     variables = {
-      # Use custom domain for signed URLs (e.g., cdn.stream-io.cloud)
-      # The policy resource must match the actual domain used in the URL
-      CLOUDFRONT_DOMAIN      = local.cloudfront_domain
-      CF_PRIVATE_KEY         = var.cloudfront_private_key
-      CF_KEY_PAIR_ID         = var.cloudfront_key_pair_id
-      PROJECTS_TABLE         = aws_dynamodb_table.projects.name
-      URL_EXPIRES_IN_SECONDS = "600"  # 10 minutes default (short TTL)
+      # Custom domain for baseUrl (e.g., cdn.stream-io.cloud)
+      CLOUDFRONT_CUSTOM_DOMAIN = local.cloudfront_domain
+      # Distribution domain for policy resource (CloudFront requirement)
+      # Policy resource MUST use distribution domain, even though URL uses custom domain
+      CLOUDFRONT_DOMAIN        = aws_cloudfront_distribution.cdn.domain_name
+      CF_PRIVATE_KEY           = var.cloudfront_private_key
+      CF_KEY_PAIR_ID           = var.cloudfront_key_pair_id
+      PROJECTS_TABLE           = aws_dynamodb_table.projects.name
+      URL_EXPIRES_IN_SECONDS   = "600"  # 10 minutes default (short TTL)
     }
   }
 }

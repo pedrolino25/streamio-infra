@@ -2,11 +2,12 @@ import crypto from "crypto";
 
 export class UrlSigner {
   constructor(
-    private readonly cloudfrontDomain: string,
+    private readonly cloudfrontDistributionDomain: string, // For policy resource
+    private readonly cloudfrontCustomDomain: string, // For baseUrl
     private readonly keyPairId: string,
     private readonly privateKey: string
   ) {
-    if (!cloudfrontDomain || !keyPairId || !privateKey) {
+    if (!cloudfrontDistributionDomain || !cloudfrontCustomDomain || !keyPairId || !privateKey) {
       throw new Error("UrlSigner: Missing required configuration");
     }
   }
@@ -28,15 +29,16 @@ export class UrlSigner {
         throw new Error("Invalid expiration timestamp");
       }
 
-      // Create wildcard resource: https://cdn.stream-io.cloud/<project-id>/*
-      const resource = `https://${this.cloudfrontDomain}/${projectId}/*`;
+      // IMPORTANT: Policy resource MUST use distribution domain (CloudFront requirement)
+      // Even though the actual URL uses custom domain, the policy must reference distribution domain
+      const resource = `https://${this.cloudfrontDistributionDomain}/${projectId}/*`;
       const policy = this.createPolicy(resource, expires);
       const signature = this.createSignature(policy);
 
-      // Build base URL and query parameters
+      // Build base URL using custom domain (user-friendly)
       // Frontend can append any file path to baseUrl and add queryParams
       // Example: baseUrl + "/video.m3u8" + "?" + queryParams
-      const baseUrl = `https://${this.cloudfrontDomain}/${projectId}`;
+      const baseUrl = `https://${this.cloudfrontCustomDomain}/${projectId}`;
       const params = new URLSearchParams({
         "Policy": Buffer.from(policy).toString("base64url"),
         "Signature": signature,
