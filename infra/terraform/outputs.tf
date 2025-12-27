@@ -22,6 +22,16 @@ output "route53_nameservers" {
   description = "Route53 nameservers for the root domain. Configure these at your domain registrar."
 }
 
+output "acm_certificate_arn" {
+  value       = aws_acm_certificate.cloudfront.arn
+  description = "ACM certificate ARN for CloudFront (in us-east-1)"
+}
+
+output "acm_certificate_status" {
+  value       = aws_acm_certificate_validation.cloudfront.certificate_arn != "" ? "Validated" : "Pending"
+  description = "ACM certificate validation status"
+}
+
 output "cognito_user_pool_id" {
   value       = aws_cognito_user_pool.admin.id
   description = "Cognito User Pool ID for admin authentication"
