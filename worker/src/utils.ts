@@ -1,7 +1,7 @@
 import path from "path";
 
 export function extractProjectIdentifier(s3Key: string): string | null {
-  const match = s3Key.match(/^projects\/([^/]+)\//);
+  const match = s3Key.match(/^([^/]+)\//);
   return match ? match[1] : null;
 }
 
