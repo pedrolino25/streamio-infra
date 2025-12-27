@@ -3,7 +3,8 @@ import { ApiGatewayResponse, SignedCookies } from "../types";
 export class ResponseBuilder {
   static success(
     expiresAt: number,
-    cookies: SignedCookies
+    cookies: SignedCookies,
+    domain?: string
   ): ApiGatewayResponse {
     return {
       statusCode: 200,
@@ -14,7 +15,7 @@ export class ResponseBuilder {
       }),
       headers: {
         "Content-Type": "application/json",
-        "Set-Cookie": this.buildCookieHeader(cookies),
+        "Set-Cookie": this.buildCookieHeader(cookies, domain),
         // CORS headers required when setting cookies from API Gateway
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Credentials": "true",
@@ -31,13 +32,24 @@ export class ResponseBuilder {
     };
   }
 
-  private static buildCookieHeader(cookies: SignedCookies): string {
+  private static buildCookieHeader(
+    cookies: SignedCookies,
+    domain?: string
+  ): string {
+    // Get domain from parameter or environment variable
+    const cookieDomain = domain || process.env.CLOUDFRONT_DOMAIN;
+
     // Cookie attributes required for CloudFront signed cookies:
+    // - Domain: Set to the custom CloudFront domain (e.g., cdn.example.com)
+    //   Note: Without leading dot means cookie only works for exact domain match
+    //   This ensures cookies only work with the specific CloudFront custom domain
     // - Path=/: Available for all paths under the domain
-    // - Secure: Only sent over HTTPS
+    // - Secure: Only sent over HTTPS (required for CloudFront)
     // - HttpOnly: Not accessible via JavaScript (security)
-    // - SameSite=None: Required for cross-origin cookie setting
-    const cookieAttributes = "Path=/; Secure; HttpOnly; SameSite=None";
+    // - SameSite=None: Required for cross-origin cookie setting (API Gateway to CloudFront)
+    const cookieAttributes = cookieDomain
+      ? `Domain=${cookieDomain}; Path=/; Secure; HttpOnly; SameSite=None`
+      : "Path=/; Secure; HttpOnly; SameSite=None";
 
     // Build Set-Cookie header with all three required cookies
     // Multiple Set-Cookie headers should be separate (API Gateway will handle this)

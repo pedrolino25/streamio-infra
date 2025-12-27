@@ -16,12 +16,4 @@ resource "aws_route53_zone" "root" {
   }
 }
 
-############################################
-# Local values for domain names
-############################################
-locals {
-  # Environment-scoped subdomain: dev → cdn-dev.example.com, prod → cdn.example.com
-  cloudfront_subdomain = var.environment == "prod" ? "cdn" : "cdn-${var.environment}"
-  cloudfront_domain    = "${local.cloudfront_subdomain}.${var.domain_name}"
-}
 

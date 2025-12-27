@@ -48,7 +48,12 @@ export class SignedCookiesHandler {
       const expires = this.calculateExpiration();
       const cookies = this.cookieSigner.sign(wildcardPath, expires);
 
-      return ResponseBuilder.success(expires, cookies);
+      // Pass the CloudFront domain to ensure cookies are set for the correct domain
+      return ResponseBuilder.success(
+        expires,
+        cookies,
+        this.config.cloudfrontDomain
+      );
     } catch (error) {
       console.error("Signed cookies generation error:", error);
       return ResponseBuilder.error(
