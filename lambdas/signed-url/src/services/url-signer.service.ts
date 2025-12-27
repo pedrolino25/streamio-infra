@@ -2,7 +2,7 @@ import crypto from "crypto";
 
 export class UrlSigner {
   constructor(
-    private readonly cloudfrontDomain: string, // Domain for both policy and baseUrl
+    private readonly cloudfrontDomain: string,
     private readonly keyPairId: string,
     private readonly privateKey: string
   ) {
@@ -15,65 +15,54 @@ export class UrlSigner {
     projectId: string,
     expires: number
   ): { baseUrl: string; queryParams: string } {
-    try {
-      if (!projectId || typeof projectId !== "string") {
-        throw new Error("Invalid projectId parameter");
-      }
-      if (!expires || typeof expires !== "number" || expires <= 0) {
-        throw new Error("Invalid expiration timestamp");
-      }
-
-      const resource = `https://${this.cloudfrontDomain}/${projectId}/*`;
-      const policy = this.createPolicy(resource, expires);
-      const signature = this.createSignature(policy);
-
-      const baseUrl = `https://${this.cloudfrontDomain}/${projectId}`;
-
-      const policyBase64 = Buffer.from(policy)
-        .toString("base64")
-        .replace(/\+/g, "-")
-        .replace(/\//g, "_")
-        .replace(/=+$/, "");
-
-      const queryParams = `Policy=${policyBase64}&Signature=${signature}&Key-Pair-Id=${encodeURIComponent(
-        this.keyPairId
-      )}`;
-
-      return {
-        baseUrl,
-        queryParams,
-      };
-    } catch (error) {
-      console.error("URL signing error:", {
-        error: error instanceof Error ? error.message : String(error),
-        hasKeyPairId: !!this.keyPairId,
-        hasPrivateKey: !!this.privateKey,
-      });
-
-      if (error instanceof Error && error.message.includes("Invalid")) {
-        throw error;
-      }
-
-      throw new Error("Failed to generate signed URL");
+    if (!projectId || typeof projectId !== "string") {
+      throw new Error("Invalid projectId parameter");
     }
+    if (!expires || typeof expires !== "number" || expires <= 0) {
+      throw new Error("Invalid expiration timestamp");
+    }
+
+    // Sign all HLS assets
+    const resource = `https://${this.cloudfrontDomain}/${projectId}/*`;
+    const policy = this.createPolicy(resource, expires);
+
+    const policyBase64 = Buffer.from(policy)
+      .toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+
+    const signature = this.createSignature(policy);
+
+    // IMPORTANT:
+    // baseUrl must be the REAL requested path (index.m3u8 lives below this)
+    const baseUrl = `https://${this.cloudfrontDomain}/${projectId}/v/0/index.m3u8`;
+
+    // IMPORTANT:
+    // DO NOT encode Signature or Policy again
+    const queryParams =
+      `Policy=${policyBase64}` +
+      `&Signature=${signature}` +
+      `&Key-Pair-Id=${this.keyPairId}`;
+
+    return {
+      baseUrl,
+      queryParams,
+    };
   }
 
   private createPolicy(resource: string, expires: number): string {
-    return JSON.stringify(
-      {
-        Statement: [
-          {
-            Resource: resource,
-            Effect: "Allow",
-            Condition: {
-              DateLessThan: { "AWS:EpochTime": expires },
-            },
+    return JSON.stringify({
+      Statement: [
+        {
+          Resource: resource,
+          Effect: "Allow",
+          Condition: {
+            DateLessThan: { "AWS:EpochTime": expires },
           },
-        ],
-      },
-      null,
-      0
-    );
+        },
+      ],
+    });
   }
 
   private createSignature(policy: string): string {
