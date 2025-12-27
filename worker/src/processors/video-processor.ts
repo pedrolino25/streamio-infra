@@ -62,11 +62,11 @@ export class VideoProcessor extends BaseProcessor {
         // ---------- SAFE FILTER GRAPH (NO SPLITS) ----------
         "-filter_complex",
         `
-          [0:v]fps=30,scale=426:-2:force_original_aspect_ratio=decrease[v240];
-          [0:v]fps=30,scale=640:-2:force_original_aspect_ratio=decrease[v360];
-          [0:v]fps=30,scale=854:-2:force_original_aspect_ratio=decrease[v480];
-          [0:v]fps=30,scale=1280:-2:force_original_aspect_ratio=decrease[v720];
-          [0:v]fps=30,scale=1920:-2:force_original_aspect_ratio=decrease[v1080]
+          [0:v]fps=30,scale=426:240:force_original_aspect_ratio=decrease,scale='trunc(iw/2)*2':'trunc(ih/2)*2'[v240];
+          [0:v]fps=30,scale=640:360:force_original_aspect_ratio=decrease,scale='trunc(iw/2)*2':'trunc(ih/2)*2'[v360];
+          [0:v]fps=30,scale=854:480:force_original_aspect_ratio=decrease,scale='trunc(iw/2)*2':'trunc(ih/2)*2'[v480];
+          [0:v]fps=30,scale=1280:720:force_original_aspect_ratio=decrease,scale='trunc(iw/2)*2':'trunc(ih/2)*2'[v720];
+          [0:v]fps=30,scale=1920:1080:force_original_aspect_ratio=decrease,scale='trunc(iw/2)*2':'trunc(ih/2)*2'[v1080]
         `.replace(/\s+/g, " "),
 
         // ---------- STREAM MAPPING ----------
