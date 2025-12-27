@@ -2,6 +2,16 @@ output "api_id" {
   value = aws_api_gateway_rest_api.api.id
 }
 
+output "api_gateway_url" {
+  value       = "https://${aws_api_gateway_domain_name.api.domain_name}/${var.environment}"
+  description = "API Gateway base URL"
+}
+
+output "api_gateway_custom_domain" {
+  value       = "https://${local.api_domain}"
+  description = "API Gateway custom domain URL (environment-scoped)"
+}
+
 output "cloudfront_domain" {
   value       = aws_cloudfront_distribution.cdn.domain_name
   description = "CloudFront distribution domain name (CloudFront-generated)"
