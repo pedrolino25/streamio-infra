@@ -43,7 +43,7 @@ export class SignedCookiesHandler {
         project.projectName
       );
 
-      const wildcardPath = `/projects/${projectIdentifier}/*`;
+      const wildcardPath = `/${projectIdentifier}/*`;
 
       const expires = this.calculateExpiration();
       const cookies = this.cookieSigner.sign(wildcardPath, expires);

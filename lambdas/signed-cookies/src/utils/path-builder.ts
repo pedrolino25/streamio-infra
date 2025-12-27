@@ -1,13 +1,16 @@
 export class PathBuilder {
   static buildFullPath(projectIdentifier: string, userPath: string): string {
     const normalized = this.normalize(userPath);
-    return `/projects/${projectIdentifier}/${normalized}`;
+    return `/${projectIdentifier}/${normalized}`;
   }
 
-  static buildWildcardPath(projectIdentifier: string, userPath: string): string {
+  static buildWildcardPath(
+    projectIdentifier: string,
+    userPath: string
+  ): string {
     const normalized = this.normalize(userPath);
     const wildcardPath = this.toWildcardPath(normalized);
-    return `/projects/${projectIdentifier}/${wildcardPath}`;
+    return `/${projectIdentifier}/${wildcardPath}`;
   }
 
   private static normalize(path: string): string {
@@ -27,4 +30,3 @@ export class PathBuilder {
     return "*";
   }
 }
-

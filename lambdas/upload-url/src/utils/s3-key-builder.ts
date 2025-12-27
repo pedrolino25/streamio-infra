@@ -6,7 +6,6 @@ export class S3KeyBuilder {
   ): string {
     const normalizedPath = filePath.replace(/^\/+|\/+$/g, "");
     const pathPrefix = normalizedPath ? `${normalizedPath}/` : "";
-    return `projects/${projectIdentifier}/${pathPrefix}${filename}`;
+    return `${projectIdentifier}/${pathPrefix}${filename}`;
   }
 }
-

@@ -103,7 +103,7 @@ This platform enables multiple projects to:
 - Each client receives a unique **API Key** that resolves to a project in DynamoDB
 - **Upload**: Only via presigned S3 URLs (no direct S3 access)
 - **Playback**: Only via CloudFront Signed Cookies with expiration timestamps
-- All S3 paths are automatically prefixed with `projects/{project_id}/`
+- All S3 paths are automatically prefixed with `{project_id}/`
 
 ---
 
@@ -135,7 +135,7 @@ x-api-key: YOUR_API_KEY
 ```json
 {
   "uploadUrl": "https://s3-presigned-url...",
-  "s3Key": "projects/project123/uploads/2025/event/video.mp4"
+  "s3Key": "project123/uploads/2025/event/video.mp4"
 }
 ```
 
@@ -167,6 +167,7 @@ x-api-key: YOUR_API_KEY
 **Note:** Cookies are automatically set via `Set-Cookie` headers. Once set, you can access any CloudFront URL under your project path without additional authentication.
 
 **CloudFront Domain:** The signed cookies work with your environment-specific CloudFront domain:
+
 - Production: `https://cdn.example.com`
 - Development: `https://cdn-dev.example.com`
 
@@ -255,6 +256,7 @@ When deploying manually, you need to provide:
 - `environment` - Environment name (`dev` or `prod`)
 
 Example:
+
 ```bash
 terraform apply \
   -var="domain_name=example.com" \
@@ -265,6 +267,7 @@ terraform apply \
 #### DNS Resources
 
 Terraform automatically manages:
+
 - ✅ **Route53 Hosted Zone** for the root domain
 - ✅ **ACM Certificate** in `us-east-1` (required for CloudFront)
 - ✅ **DNS Validation Records** for certificate validation
@@ -314,6 +317,7 @@ terraform apply \
 ```
 
 After deployment, check the Route53 nameservers:
+
 ```bash
 terraform output route53_nameservers
 ```
