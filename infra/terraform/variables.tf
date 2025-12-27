@@ -72,7 +72,7 @@ variable "worker_cpu" {
 
 variable "worker_memory" {
   type        = number
-  default     = 4096
+  default     = 8192
   description = <<-EOT
     Memory for the ECS worker task (in MB).
     
