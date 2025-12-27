@@ -19,12 +19,6 @@ export interface Project {
   projectName?: string;
 }
 
-export interface SignedCookies {
-  "CloudFront-Policy": string;
-  "CloudFront-Signature": string;
-  "CloudFront-Key-Pair-Id": string;
-}
-
 export enum ErrorCode {
   MISSING_API_KEY = "MISSING_API_KEY",
   INVALID_API_KEY = "INVALID_API_KEY",
@@ -33,3 +27,4 @@ export enum ErrorCode {
   SIGNING_ERROR = "SIGNING_ERROR",
   INTERNAL_ERROR = "INTERNAL_ERROR",
 }
+

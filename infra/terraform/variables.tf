@@ -39,5 +39,17 @@ variable "cloudfront_key_pair_id" {
 variable "cloudfront_cors_origins" {
   type        = list(string)
   default     = []
-  description = "Allowed CORS origins for CloudFront. When empty, uses wildcard (*) with credentials=false. When provided, uses credentials=true."
+  description = <<-EOT
+    Allowed CORS origins for CloudFront. 
+    
+    When empty: Uses wildcard (*) with credentials=false. This works for most cases since 
+    CloudFront signed cookies are domain-scoped and automatically sent by browsers.
+    
+    When provided: Uses credentials=true with specific origins. REQUIRED if your client code 
+    uses credentials: 'include' (fetch) or withCredentials: true (XMLHttpRequest).
+    
+    Example: ["http://localhost:3000", "https://example.com"]
+    
+    Note: If you see CORS errors about wildcard with credentials, add your origins here.
+  EOT
 }

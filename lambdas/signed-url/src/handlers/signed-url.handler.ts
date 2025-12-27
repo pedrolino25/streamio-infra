@@ -1,15 +1,15 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { Config } from "../config";
-import { CookieSigner } from "../services/cookie-signer.service";
 import { ProjectService } from "../services/project.service";
+import { UrlSigner } from "../services/url-signer.service";
 import { ApiGatewayEvent, ApiGatewayResponse, ErrorCode } from "../types";
 import { RequestValidator } from "../utils/request-validator";
 import { ResponseBuilder } from "../utils/response-builder";
 
-export class SignedCookiesHandler {
+export class SignedUrlHandler {
   private readonly config: Config;
   private readonly projectService: ProjectService;
-  private readonly cookieSigner: CookieSigner;
+  private readonly urlSigner: UrlSigner;
 
   constructor() {
     this.config = new Config();
@@ -17,7 +17,7 @@ export class SignedCookiesHandler {
       new DynamoDBClient({}),
       this.config.projectsTable
     );
-    this.cookieSigner = new CookieSigner(
+    this.urlSigner = new UrlSigner(
       this.config.cloudfrontDomain,
       this.config.cfKeyPairId,
       this.config.cfPrivateKey
@@ -64,22 +64,23 @@ export class SignedCookiesHandler {
         );
       }
 
-      const wildcardPath = `/${project.projectName}/*`;
+      // Use projectId (or projectName if available) for the folder path
+      const projectId = project.projectId;
       const expires = this.calculateExpiration();
-      const cookies = this.cookieSigner.sign(wildcardPath, expires);
+      const { baseUrl, queryParams } = this.urlSigner.sign(projectId, expires);
 
-      this.logInfo("Signed cookies generated successfully", {
+      this.logInfo("Signed URL generated successfully", {
         requestId,
-        projectId: project.projectId,
+        projectId,
         expires,
       });
 
       return ResponseBuilder.success(
+        baseUrl,
+        queryParams,
         expires,
-        cookies,
-        this.config.cloudfrontDomain,
-        origin,
-        wildcardPath
+        projectId,
+        origin
       );
     } catch (error) {
       return this.handleError(error, origin, requestId);

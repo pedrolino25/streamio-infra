@@ -1,37 +1,54 @@
 import crypto from "crypto";
-import { SignedCookies } from "../types";
 
-export class CookieSigner {
+export class UrlSigner {
   constructor(
     private readonly cloudfrontDomain: string,
     private readonly keyPairId: string,
     private readonly privateKey: string
   ) {
     if (!cloudfrontDomain || !keyPairId || !privateKey) {
-      throw new Error("CookieSigner: Missing required configuration");
+      throw new Error("UrlSigner: Missing required configuration");
     }
   }
 
-  sign(path: string, expires: number): SignedCookies {
+  /**
+   * Generates CloudFront signed URL query parameters with a wildcard policy.
+   * The policy authorizes access to all files within the specified project folder.
+   * 
+   * @param projectId - The project ID to create a wildcard path for
+   * @param expires - Unix timestamp (seconds) when the URL expires
+   * @returns An object containing the base URL and query parameters that can be appended to any file path
+   */
+  sign(projectId: string, expires: number): { baseUrl: string; queryParams: string } {
     try {
-      if (!path || typeof path !== "string") {
-        throw new Error("Invalid path parameter");
+      if (!projectId || typeof projectId !== "string") {
+        throw new Error("Invalid projectId parameter");
       }
       if (!expires || typeof expires !== "number" || expires <= 0) {
         throw new Error("Invalid expiration timestamp");
       }
 
-      const resource = `https://${this.cloudfrontDomain}${path}`;
+      // Create wildcard resource: https://cdn.stream-io.cloud/<project-id>/*
+      const resource = `https://${this.cloudfrontDomain}/${projectId}/*`;
       const policy = this.createPolicy(resource, expires);
       const signature = this.createSignature(policy);
 
+      // Build base URL and query parameters
+      // Frontend can append any file path to baseUrl and add queryParams
+      // Example: baseUrl + "/video.m3u8" + "?" + queryParams
+      const baseUrl = `https://${this.cloudfrontDomain}/${projectId}`;
+      const params = new URLSearchParams({
+        "Policy": Buffer.from(policy).toString("base64url"),
+        "Signature": signature,
+        "Key-Pair-Id": this.keyPairId,
+      });
+
       return {
-        "CloudFront-Policy": Buffer.from(policy).toString("base64"),
-        "CloudFront-Signature": signature,
-        "CloudFront-Key-Pair-Id": this.keyPairId,
+        baseUrl,
+        queryParams: params.toString(),
       };
     } catch (error) {
-      console.error("Cookie signing error:", {
+      console.error("URL signing error:", {
         error: error instanceof Error ? error.message : String(error),
         hasKeyPairId: !!this.keyPairId,
         hasPrivateKey: !!this.privateKey,
@@ -41,7 +58,7 @@ export class CookieSigner {
         throw error;
       }
 
-      throw new Error("Failed to generate signed cookies");
+      throw new Error("Failed to generate signed URL");
     }
   }
 
@@ -65,7 +82,7 @@ export class CookieSigner {
       return crypto
         .createSign("RSA-SHA256")
         .update(policy)
-        .sign(privateKey, "base64");
+        .sign(privateKey, "base64url");
     } catch (error) {
       console.error("Signature creation error:", {
         error: error instanceof Error ? error.message : String(error),
@@ -74,3 +91,4 @@ export class CookieSigner {
     }
   }
 }
+

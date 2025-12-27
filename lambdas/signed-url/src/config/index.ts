@@ -1,6 +1,6 @@
 export class Config {
   readonly projectsTable: string;
-  readonly cloudfrontDomain: string; // Actual CloudFront distribution domain (for signed cookie validation)
+  readonly cloudfrontDomain: string;
   readonly cfKeyPairId: string;
   readonly cfPrivateKey: string;
   readonly urlExpiresInSeconds: number;
@@ -10,9 +10,9 @@ export class Config {
     this.cloudfrontDomain = this.getRequiredEnv("CLOUDFRONT_DOMAIN");
     this.cfKeyPairId = this.getRequiredEnv("CF_KEY_PAIR_ID");
     this.cfPrivateKey = this.getRequiredEnv("CF_PRIVATE_KEY");
-    const defaultExpiration = 86400; // 24 hours
+    const defaultExpiration = 600; // 10 minutes (short TTL as per requirements)
     const expiration = this.getNumberEnv(
-      "COOKIE_EXPIRES_IN_SECONDS",
+      "URL_EXPIRES_IN_SECONDS",
       defaultExpiration
     );
 
@@ -38,3 +38,4 @@ export class Config {
     return isNaN(parsed) ? defaultValue : parsed;
   }
 }
+

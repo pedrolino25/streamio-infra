@@ -12,7 +12,7 @@ This platform enables multiple projects to:
 
 1. **Securely upload videos** via presigned S3 URLs
 2. **Automatic processing** with FFmpeg on ECS
-3. **Protected delivery** via CloudFront with signed cookies
+3. **Protected delivery** via CloudFront with signed URLs
 
 ### Key Features
 
@@ -37,7 +37,7 @@ This platform enables multiple projects to:
 │  API Gateway        │
 │                     │
 │  POST /upload-url    → Presigned S3 PUT
-│  POST /signed-cookies → CloudFront Signed Cookies
+│  POST /signed-url    → CloudFront Signed URLs
 └────┬────────────────┘
      │
      ▼
@@ -90,7 +90,7 @@ This platform enables multiple projects to:
 | **ECS RunTask**       | FFmpeg worker (scales to zero)                   |
 | **S3 RAW**            | Private bucket for initial video uploads         |
 | **S3 PROCESSED**      | Private bucket for processed videos              |
-| **CloudFront**        | CDN with signed cookies for secure playback      |
+| **CloudFront**        | CDN with signed URLs for secure playback         |
 | **Route53**           | DNS management and domain routing                |
 | **ACM**               | SSL/TLS certificates for HTTPS (us-east-1)       |
 | **DynamoDB**          | Project/tenant management and API key resolution |
@@ -102,7 +102,7 @@ This platform enables multiple projects to:
 
 - Each client receives a unique **API Key** that resolves to a project in DynamoDB
 - **Upload**: Only via presigned S3 URLs (no direct S3 access)
-- **Playback**: Only via CloudFront Signed Cookies with expiration timestamps
+- **Playback**: Only via CloudFront Signed URLs with wildcard policies (Netflix/YouTube model)
 - All S3 paths are automatically prefixed with `{project_id}/`
 
 ---
@@ -143,11 +143,11 @@ x-api-key: YOUR_API_KEY
 
 ---
 
-### Get Signed Cookies
+### Get Signed URL
 
-Get CloudFront signed cookies for secure video playback. Cookies allow access to all HLS content under the project path.
+Get CloudFront signed URL parameters for secure video playback. The signed URL uses a wildcard policy that authorizes access to all HLS content under the project path.
 
-**Endpoint:** `POST /signed-cookies`
+**Endpoint:** `POST /signed-url`
 
 **Headers:**
 
@@ -159,14 +159,37 @@ x-api-key: YOUR_API_KEY
 
 ```json
 {
+  "baseUrl": "https://cdn.example.com/project123",
+  "queryParams": "Policy=...&Signature=...&Key-Pair-Id=...",
   "expiresAt": 1704067200,
-  "message": "Signed cookies set successfully. Cookies are now available for CloudFront requests."
+  "projectId": "project123",
+  "message": "Signed URL parameters generated successfully. Append queryParams to any file path under baseUrl."
 }
 ```
 
-**Note:** Cookies are automatically set via `Set-Cookie` headers. Once set, you can access any CloudFront URL under your project path without additional authentication.
+**Usage:** One backend call enables access to all videos. Frontend can derive all video URLs from the base:
 
-**CloudFront Domain:** The signed cookies work with your environment-specific CloudFront domain:
+```javascript
+// Call backend once per page/session
+const response = await fetch('https://api.example.com/signed-url', {
+  method: 'POST',
+  headers: { 'x-api-key': 'YOUR_API_KEY' }
+});
+const { baseUrl, queryParams } = await response.json();
+
+// Use for any video file - no further signing needed
+const manifestUrl = `${baseUrl}/video.m3u8?${queryParams}`;
+const segmentUrl = `${baseUrl}/segments/segment001.ts?${queryParams}`;
+```
+
+**Benefits:**
+- ✅ No browser cookies required
+- ✅ No CORS credentials needed
+- ✅ Works from any origin (CORS: *)
+- ✅ One authorization per page/session
+- ✅ Multiple videos per page without re-authorization
+
+**CloudFront Domain:** The signed URLs work with your environment-specific CloudFront domain:
 
 - Production: `https://cdn.example.com`
 - Development: `https://cdn-dev.example.com`
@@ -179,7 +202,7 @@ x-api-key: YOUR_API_KEY
 2. S3 event triggers Lambda Dispatcher
 3. Dispatcher starts ECS task for processing
 4. Worker downloads, processes, and uploads to PROCESSED bucket
-5. Processed video available via CloudFront signed cookies
+5. Processed video available via CloudFront signed URLs
 
 ---
 
@@ -285,7 +308,7 @@ For automatic deployment, configure these secrets in your GitHub repository:
 - `DOMAIN_NAME` - Root domain name (e.g., `example.com`)
 - `CLOUDFRONT_PUBLIC_KEY` - CloudFront public key (PEM format)
 - `CLOUDFRONT_PRIVATE_KEY` - CloudFront private key (PEM format)
-- `CLOUDFRONT_KEY_PAIR_ID` - CloudFront Key Pair ID (e.g., APKA... or K...) used for signing cookies
+- `CLOUDFRONT_KEY_PAIR_ID` - CloudFront Key Pair ID (e.g., APKA... or K...) used for signing URLs
 
 ### Automatic Deployment
 

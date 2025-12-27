@@ -1,7 +1,7 @@
-import { SignedCookiesHandler } from "./handlers/signed-cookies.handler";
+import { SignedUrlHandler } from "./handlers/signed-url.handler";
 import { ApiGatewayEvent, ApiGatewayResponse } from "./types";
 
-const handlerInstance = new SignedCookiesHandler();
+const handlerInstance = new SignedUrlHandler();
 
 export const handler = async (
   event: ApiGatewayEvent
