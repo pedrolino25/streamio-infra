@@ -7,7 +7,9 @@ resource "aws_lambda_function" "signed_url" {
 
   environment {
     variables = {
-      CLOUDFRONT_DOMAIN      = aws_cloudfront_distribution.cdn.domain_name
+      # Use custom domain for signed URLs (e.g., cdn.stream-io.cloud)
+      # The policy resource must match the actual domain used in the URL
+      CLOUDFRONT_DOMAIN      = local.cloudfront_domain
       CF_PRIVATE_KEY         = var.cloudfront_private_key
       CF_KEY_PAIR_ID         = var.cloudfront_key_pair_id
       PROJECTS_TABLE         = aws_dynamodb_table.projects.name
