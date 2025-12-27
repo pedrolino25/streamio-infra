@@ -17,6 +17,7 @@ export class ResponseBuilder {
       body: JSON.stringify({
         expiresAt,
         wildcardPath,
+        domain,
         message: "Signed cookies set successfully",
       }),
       headers: {
@@ -83,7 +84,10 @@ export class ResponseBuilder {
   private static buildCookieAttributes(domain?: string): string {
     // Use custom domain for cookie Domain attribute (allows cookies to work with custom domain)
     // Fallback to CLOUDFRONT_CUSTOM_DOMAIN or CLOUDFRONT_DOMAIN if not provided
-    const cookieDomain = domain || process.env.CLOUDFRONT_CUSTOM_DOMAIN || process.env.CLOUDFRONT_DOMAIN;
+    const cookieDomain =
+      domain ||
+      process.env.CLOUDFRONT_CUSTOM_DOMAIN ||
+      process.env.CLOUDFRONT_DOMAIN;
 
     const rootDomain = cookieDomain
       ? this.extractRootDomain(cookieDomain)
