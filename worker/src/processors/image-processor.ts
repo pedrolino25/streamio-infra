@@ -76,7 +76,15 @@ export class ImageProcessor extends BaseProcessor {
     format: string
   ): Promise<void> {
     return new Promise((resolve, reject) => {
-      const args: string[] = ["-y", "-i", inputPath];
+      const args: string[] = [
+        "-y",
+        "-threads",
+        "1",
+        "-loglevel",
+        "error",
+        "-i",
+        inputPath,
+      ];
 
       if (width > 0) {
         args.push("-vf", `scale=${width}:-1:flags=lanczos`);
@@ -101,19 +109,36 @@ export class ImageProcessor extends BaseProcessor {
         stdio: ["ignore", "ignore", "pipe"],
       });
 
+      // Limit stderr buffer to prevent memory accumulation
+      // Only keep last 10KB of error output for debugging
+      const MAX_STDERR_SIZE = 10 * 1024; // 10KB
       let stderr = "";
-      ff.stderr.on("data", (d) => (stderr += d.toString()));
+      let stderrSize = 0;
+
+      ff.stderr.on("data", (d: Buffer) => {
+        const chunk = d.toString();
+        stderrSize += chunk.length;
+        
+        // Keep only the most recent error output
+        if (stderrSize > MAX_STDERR_SIZE) {
+          const excess = stderrSize - MAX_STDERR_SIZE;
+          stderr = stderr.slice(excess) + chunk;
+          stderrSize = MAX_STDERR_SIZE;
+        } else {
+          stderr += chunk;
+        }
+      });
 
       ff.on("close", (code) => {
         if (code === 0) return resolve();
         if (format === "avif") {
           console.warn(
-            `AVIF encoding failed for ${outputPath}, this format may not be supported. Error: ${stderr}`
+            `AVIF encoding failed for ${outputPath}, this format may not be supported. Error: ${stderr.slice(-2000)}`
           );
           resolve();
           return;
         }
-        reject(new Error(`FFmpeg failed (${code}):\n${stderr}`));
+        reject(new Error(`FFmpeg failed (${code}):\n${stderr.slice(-5000)}`));
       });
 
       ff.on("error", reject);

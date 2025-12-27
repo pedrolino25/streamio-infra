@@ -1,4 +1,7 @@
-import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  HeadObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import { config } from "../config.js";
 import {
   ALLOWED_IMAGE_TYPES,
@@ -34,8 +37,10 @@ export class ProcessorFactory {
 
   private async getContentType(inputKey: string): Promise<string> {
     try {
+      // Use HeadObjectCommand instead of GetObjectCommand to avoid downloading the file
+      // This only retrieves metadata, not the file body
       const obj = await this.s3.send(
-        new GetObjectCommand({
+        new HeadObjectCommand({
           Bucket: config.rawBucket,
           Key: inputKey,
         })

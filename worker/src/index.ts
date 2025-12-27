@@ -1,3 +1,4 @@
+import fs from "fs";
 import path from "path";
 import { config } from "./config.js";
 import { ProcessorFactory } from "./processors/processor-factory.js";
@@ -55,9 +56,45 @@ class ProcessingJob {
 
     await this.webhookHandler.sendSuccessWebhook(this.mediaType);
   }
+
+  async cleanup(): Promise<void> {
+    // Clean up temporary files to free memory
+    const tempPaths = [
+      getInputPath(config.job.inputKey),
+      getOutputPath(this.mediaType || "video"),
+    ];
+
+    for (const tempPath of tempPaths) {
+      try {
+        if (fs.existsSync(tempPath)) {
+          const stat = await fs.promises.stat(tempPath);
+          if (stat.isDirectory()) {
+            await fs.promises.rm(tempPath, { recursive: true, force: true });
+          } else {
+            await fs.promises.unlink(tempPath);
+          }
+          console.log(`Cleaned up temp file: ${tempPath}`);
+        }
+      } catch (error) {
+        console.warn(`Failed to cleanup ${tempPath}:`, error);
+      }
+    }
+  }
+}
+
+function logMemoryUsage(label: string): void {
+  const usage = process.memoryUsage();
+  console.log(
+    `[Memory ${label}] RSS: ${(usage.rss / 1024 / 1024).toFixed(2)}MB, ` +
+      `Heap Used: ${(usage.heapUsed / 1024 / 1024).toFixed(2)}MB, ` +
+      `Heap Total: ${(usage.heapTotal / 1024 / 1024).toFixed(2)}MB, ` +
+      `External: ${(usage.external / 1024 / 1024).toFixed(2)}MB`
+  );
 }
 
 async function main(): Promise<void> {
+  logMemoryUsage("startup");
+
   const storageService = new StorageService();
   const processorFactory = new ProcessorFactory();
   const databaseService = new DatabaseService();
@@ -72,11 +109,33 @@ async function main(): Promise<void> {
   try {
     job = new ProcessingJob(storageService, processorFactory, webhookHandler);
 
+    logMemoryUsage("before-execute");
     await job.execute();
+    logMemoryUsage("after-execute");
+
+    // Clean up temporary files
+    await job.cleanup();
+    logMemoryUsage("after-cleanup");
+
+    // Force garbage collection hint (if --expose-gc is enabled)
+    if (global.gc) {
+      global.gc();
+      logMemoryUsage("after-gc");
+    }
   } catch (error) {
     console.error("Processing failed:", error);
     const mediaType = job?.getMediaType();
     await webhookHandler.sendFailureWebhook(error, mediaType);
+
+    // Attempt cleanup even on failure
+    if (job) {
+      try {
+        await job.cleanup();
+      } catch (cleanupError) {
+        console.warn("Cleanup failed:", cleanupError);
+      }
+    }
+
     process.exit(1);
   }
 }

@@ -36,4 +36,9 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY package.json ./
 
+# Set Node.js memory limit to 512MB to leave more RAM for FFmpeg
+# For 2GB videos, container should have at least 4GB total memory
+# Node gets 512MB, FFmpeg gets the rest (~3.5GB)
+ENV NODE_OPTIONS="--max-old-space-size=512"
+
 CMD ["node", "dist/index.js"]
