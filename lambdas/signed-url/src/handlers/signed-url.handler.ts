@@ -64,14 +64,16 @@ export class SignedUrlHandler {
         );
       }
 
-      // Use projectId (or projectName if available) for the folder path
-      const projectId = project.projectId;
       const expires = this.calculateExpiration();
-      const { baseUrl, queryParams } = this.urlSigner.sign(projectId, expires);
+      const { baseUrl, queryParams } = this.urlSigner.sign(
+        project.projectName!,
+        expires
+      );
 
       this.logInfo("Signed URL generated successfully", {
         requestId,
-        projectId,
+        projectId: project.projectId,
+        projectName: project.projectName,
         expires,
       });
 
@@ -79,7 +81,7 @@ export class SignedUrlHandler {
         baseUrl,
         queryParams,
         expires,
-        projectId,
+        project.projectName!,
         origin
       );
     } catch (error) {
