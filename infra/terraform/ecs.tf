@@ -6,8 +6,8 @@ resource "aws_ecs_task_definition" "worker" {
   family                   = "${local.project_name}-worker-${var.environment}"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = "1024"
-  memory                   = "2048"
+  cpu                      = tostring(var.worker_cpu)
+  memory                   = tostring(var.worker_memory)
   execution_role_arn       = aws_iam_role.ecs_task.arn
   task_role_arn            = aws_iam_role.ecs_task.arn
 
