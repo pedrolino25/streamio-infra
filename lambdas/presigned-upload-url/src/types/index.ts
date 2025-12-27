@@ -15,15 +15,7 @@ export interface ApiGatewayEvent {
   };
 }
 
-export interface UploadData {
-  filename: string;
-  path?: string;
-  contentType: string;
-  fileBuffer: Buffer;
-}
-
 export interface Project {
   projectId: string;
   projectName?: string;
 }
-

@@ -1,9 +1,9 @@
-resource "aws_lambda_function" "upload" {
-  function_name = "${local.project_name}-upload-${var.environment}"
+resource "aws_lambda_function" "presigned_upload_url" {
+  function_name = "${local.project_name}-presigned-upload-url-${var.environment}"
   role          = aws_iam_role.lambda.arn
   runtime       = "nodejs20.x"
   handler       = "index.handler"
-  filename      = "../../lambdas/upload/dist/upload.zip"
+  filename      = "../../lambdas/presigned-upload-url/dist/presigned-upload-url.zip"
 
   environment {
     variables = {

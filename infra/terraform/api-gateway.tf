@@ -1,13 +1,5 @@
 resource "aws_api_gateway_rest_api" "api" {
   name = "${local.project_name}-api-${var.environment}"
-
-  # Enable binary media types for file uploads
-  binary_media_types = [
-    "multipart/form-data",
-    "application/octet-stream",
-    "image/*",
-    "video/*",
-  ]
 }
 
 ############################################
@@ -103,7 +95,7 @@ resource "aws_api_gateway_integration" "upload" {
 
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.upload.invoke_arn
+  uri                     = aws_lambda_function.presigned_upload_url.invoke_arn
 }
 
 # Lambda integration for OPTIONS (CORS preflight)
@@ -114,14 +106,14 @@ resource "aws_api_gateway_integration" "upload_options" {
 
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.upload.invoke_arn
+  uri                     = aws_lambda_function.presigned_upload_url.invoke_arn
 }
 
 # Lambda permission for API Gateway
 resource "aws_lambda_permission" "api_gateway_upload" {
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.upload.function_name
+  function_name = aws_lambda_function.presigned_upload_url.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*"
 }

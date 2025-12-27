@@ -111,7 +111,7 @@ This platform enables multiple projects to:
 
 ### Upload Video
 
-Upload files directly via HTTPS API. The file is uploaded through the API Gateway to Lambda, which then stores it in the private S3 bucket.
+Get a presigned S3 URL for direct file upload. Files upload directly to S3, bypassing API Gateway's 10MB limit and supporting files of any size (GB, TB, etc.).
 
 **Endpoint:** `POST /upload`
 
@@ -119,48 +119,92 @@ Upload files directly via HTTPS API. The file is uploaded through the API Gatewa
 
 ```
 x-api-key: YOUR_API_KEY
-Content-Type: multipart/form-data
+Content-Type: application/json
 ```
 
-**Request Body (multipart/form-data):**
+**Request Body:**
 
-- `file` (required): The file to upload
-- `path` (optional): Custom path prefix for the file (e.g., `uploads/2025/event/`)
-
-**Example using curl:**
-
-```bash
-curl -X POST https://api.example.com/upload \
-  -H "x-api-key: YOUR_API_KEY" \
-  -F "file=@video.mp4" \
-  -F "path=uploads/2025/event/"
-```
-
-**Alternative: Binary upload with headers:**
-
-```bash
-curl -X POST https://api.example.com/upload \
-  -H "x-api-key: YOUR_API_KEY" \
-  -H "Content-Type: video/mp4" \
-  -H "X-Filename: video.mp4" \
-  -H "X-Path: uploads/2025/event/" \
-  --data-binary @video.mp4
+```json
+{
+  "filename": "video.mp4",
+  "path": "uploads/2025/event/",
+  "contentType": "video/mp4"
+}
 ```
 
 **Response:**
 
 ```json
 {
+  "uploadUrl": "https://s3.amazonaws.com/bucket/...?X-Amz-Signature=...",
   "s3Key": "project123/uploads/2025/event/video.mp4",
-  "message": "File uploaded successfully"
+  "expiresIn": 3600
 }
+```
+
+**Usage:** Upload the file directly to the `uploadUrl` using a `PUT` request. The presigned URL expires after 1 hour.
+
+**Example using curl:**
+
+```bash
+# 1. Get presigned URL
+RESPONSE=$(curl -X POST https://api.example.com/upload \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "filename": "video.mp4",
+    "path": "uploads/2025/event/",
+    "contentType": "video/mp4"
+  }')
+
+UPLOAD_URL=$(echo $RESPONSE | jq -r '.uploadUrl')
+
+# 2. Upload file directly to S3
+curl -X PUT "$UPLOAD_URL" \
+  -H "Content-Type: video/mp4" \
+  --data-binary @video.mp4
+```
+
+**Frontend Example:**
+
+```javascript
+// 1. Get presigned URL
+const response = await fetch("https://api.stream-io.cloud/upload", {
+  method: "POST",
+  headers: {
+    "x-api-key": apiKey,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    filename: file.name,
+    path: values.path?.trim() || "",
+    contentType: file.type,
+  }),
+});
+
+const { uploadUrl, s3Key } = await response.json();
+
+// 2. Upload file directly to S3 (supports files of any size - GB, TB, etc.)
+await fetch(uploadUrl, {
+  method: "PUT",
+  headers: {
+    "Content-Type": file.type,
+  },
+  body: file, // File object - can be GB-sized!
+});
+
+console.log("File uploaded to:", s3Key);
 ```
 
 **Supported File Types:**
 - Images: JPEG, PNG, GIF, WebP, BMP, SVG, TIFF, ICO, AVIF, HEIC, HEIF
 - Videos: MP4, MPEG, QuickTime, AVI, WMV, WebM, OGG, MKV, FLV, 3GP, and more
 
-**Note:** API Gateway has a 10MB payload limit. For larger files, consider implementing multipart uploads or using S3 Multipart Upload API.
+**Benefits:**
+- ✅ No file size limit (supports GB, TB files)
+- ✅ Direct upload to S3 (faster, more reliable)
+- ✅ Bypasses API Gateway 10MB limit
+- ✅ S3 bucket remains private (presigned URLs are temporary)
 
 ---
 
@@ -192,9 +236,9 @@ x-api-key: YOUR_API_KEY
 
 ```javascript
 // Call backend once per page/session
-const response = await fetch('https://api.example.com/signed-url', {
-  method: 'POST',
-  headers: { 'x-api-key': 'YOUR_API_KEY' }
+const response = await fetch("https://api.example.com/signed-url", {
+  method: "POST",
+  headers: { "x-api-key": "YOUR_API_KEY" },
 });
 const { baseUrl, queryParams } = await response.json();
 
@@ -204,9 +248,10 @@ const segmentUrl = `${baseUrl}/segments/segment001.ts?${queryParams}`;
 ```
 
 **Benefits:**
+
 - ✅ No browser cookies required
 - ✅ No CORS credentials needed
-- ✅ Works from any origin (CORS: *)
+- ✅ Works from any origin (CORS: \*)
 - ✅ One authorization per page/session
 - ✅ Multiple videos per page without re-authorization
 

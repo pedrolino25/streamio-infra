@@ -3,8 +3,8 @@ resource "aws_cloudwatch_log_group" "ecs" {
   retention_in_days = 14
 }
 
-resource "aws_cloudwatch_log_group" "lambda_upload" {
-  name              = "/aws/lambda/${local.project_name}-upload-${var.environment}"
+resource "aws_cloudwatch_log_group" "lambda_presigned_upload_url" {
+  name              = "/aws/lambda/${local.project_name}-presigned-upload-url-${var.environment}"
   retention_in_days = 14
 
   lifecycle {
