@@ -21,6 +21,14 @@ resource "aws_api_gateway_method" "signed_cookies_post" {
   authorization = "NONE"
 }
 
+# OPTIONS method for CORS preflight
+resource "aws_api_gateway_method" "signed_cookies_options" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.signed_cookies.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
 # Integration with Lambda
 resource "aws_api_gateway_integration" "signed_cookies" {
   rest_api_id = aws_api_gateway_rest_api.api.id
@@ -30,6 +38,47 @@ resource "aws_api_gateway_integration" "signed_cookies" {
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.signed_cookies.invoke_arn
+}
+
+# Mock integration for OPTIONS (CORS preflight)
+resource "aws_api_gateway_integration" "signed_cookies_options" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.signed_cookies.id
+  http_method = aws_api_gateway_method.signed_cookies_options.http_method
+
+  type = "MOCK"
+  
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+# Method response for OPTIONS
+resource "aws_api_gateway_method_response" "signed_cookies_options" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.signed_cookies.id
+  http_method = aws_api_gateway_method.signed_cookies_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+}
+
+# Integration response for OPTIONS
+resource "aws_api_gateway_integration_response" "signed_cookies_options" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.signed_cookies.id
+  http_method = aws_api_gateway_method.signed_cookies_options.http_method
+  status_code = aws_api_gateway_method_response.signed_cookies_options.status_code
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-api-key'"
+    "method.response.header.Access-Control-Allow-Methods" = "'POST,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin" = "'*'"
+  }
 }
 
 # Lambda permission for API Gateway
@@ -52,13 +101,24 @@ resource "aws_api_gateway_deployment" "api" {
     redeployment = sha1(jsonencode([
       aws_api_gateway_resource.signed_cookies.id,
       aws_api_gateway_method.signed_cookies_post.id,
+      aws_api_gateway_method.signed_cookies_options.id,
       aws_api_gateway_integration.signed_cookies.id,
+      aws_api_gateway_integration.signed_cookies_options.id,
+      aws_api_gateway_method_response.signed_cookies_options.id,
+      aws_api_gateway_integration_response.signed_cookies_options.id,
     ]))
   }
 
   lifecycle {
     create_before_destroy = true
   }
+
+  depends_on = [
+    aws_api_gateway_method.signed_cookies_post,
+    aws_api_gateway_method.signed_cookies_options,
+    aws_api_gateway_integration.signed_cookies,
+    aws_api_gateway_integration.signed_cookies_options,
+  ]
 }
 
 resource "aws_api_gateway_stage" "api" {
