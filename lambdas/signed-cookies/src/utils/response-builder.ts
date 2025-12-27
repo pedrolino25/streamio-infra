@@ -15,11 +15,10 @@ export class ResponseBuilder {
       }),
       headers: {
         "Content-Type": "application/json",
-        "Set-Cookie": this.buildCookieHeader(cookies, domain),
-        // CORS headers required when setting cookies from API Gateway
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Credentials": "false",
         "Access-Control-Expose-Headers": "Set-Cookie",
+        "Set-Cookie": this.buildCookieHeader(cookies, domain),
       },
     };
   }
