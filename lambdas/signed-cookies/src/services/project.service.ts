@@ -1,4 +1,9 @@
-import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
+import {
+  DynamoDBClient,
+  GetItemCommand,
+  ProvisionedThroughputExceededException,
+  ResourceNotFoundException,
+} from "@aws-sdk/client-dynamodb";
 import { Project } from "../types";
 
 export class ProjectService {
@@ -25,11 +30,21 @@ export class ProjectService {
         projectName: result.Item.project_name?.S,
       };
     } catch (error) {
-      throw new Error(
-        `Failed to retrieve project: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      );
+      // Handle specific AWS errors
+      if (error instanceof ProvisionedThroughputExceededException) {
+        throw new Error("Service temporarily unavailable. Please try again later.");
+      }
+      if (error instanceof ResourceNotFoundException) {
+        throw new Error("Configuration error: projects table not found");
+      }
+
+      // Log full error for debugging, but return generic message
+      console.error("DynamoDB error:", {
+        error: error instanceof Error ? error.message : String(error),
+        tableName: this.tableName,
+      });
+
+      throw new Error("Failed to retrieve project information");
     }
   }
 }

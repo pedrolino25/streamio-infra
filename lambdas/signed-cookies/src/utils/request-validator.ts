@@ -1,16 +1,9 @@
 export class RequestValidator {
-  static validateApiKey(apiKey: string | undefined): string | null {
-    if (!apiKey) {
-      return "Missing API key";
+  static validateApiKey(apiKey: string | undefined | null): { valid: boolean; error?: string } {
+    if (!apiKey || typeof apiKey !== "string" || apiKey.trim().length === 0) {
+      return { valid: false, error: "API key is required" };
     }
-    return null;
-  }
-
-  static validatePath(path: string | undefined | null): string | null {
-    if (!path) {
-      return "Missing path parameter";
-    }
-    return null;
+    return { valid: true };
   }
 }
 

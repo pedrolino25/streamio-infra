@@ -6,10 +6,23 @@ export class CookieSigner {
     private readonly cloudfrontDomain: string,
     private readonly keyPairId: string,
     private readonly privateKey: string
-  ) {}
+  ) {
+    // Validate required configuration
+    if (!cloudfrontDomain || !keyPairId || !privateKey) {
+      throw new Error("CookieSigner: Missing required configuration");
+    }
+  }
 
   sign(path: string, expires: number): SignedCookies {
     try {
+      // Validate inputs
+      if (!path || typeof path !== "string") {
+        throw new Error("Invalid path parameter");
+      }
+      if (!expires || typeof expires !== "number" || expires <= 0) {
+        throw new Error("Invalid expiration timestamp");
+      }
+
       const resource = `https://${this.cloudfrontDomain}${path}`;
       const policy = this.createPolicy(resource, expires);
       const signature = this.createSignature(policy);
@@ -20,11 +33,18 @@ export class CookieSigner {
         "CloudFront-Key-Pair-Id": this.keyPairId,
       };
     } catch (error) {
-      throw new Error(
-        `Failed to sign cookies: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      );
+      // Log error details for debugging but don't expose internals
+      console.error("Cookie signing error:", {
+        error: error instanceof Error ? error.message : String(error),
+        hasKeyPairId: !!this.keyPairId,
+        hasPrivateKey: !!this.privateKey,
+      });
+
+      if (error instanceof Error && error.message.includes("Invalid")) {
+        throw error;
+      }
+
+      throw new Error("Failed to generate signed cookies");
     }
   }
 
@@ -43,10 +63,17 @@ export class CookieSigner {
   }
 
   private createSignature(policy: string): string {
-    const privateKey = this.privateKey.replace(/\\n/g, "\n");
-    return crypto
-      .createSign("RSA-SHA256")
-      .update(policy)
-      .sign(privateKey, "base64");
+    try {
+      const privateKey = this.privateKey.replace(/\\n/g, "\n");
+      return crypto
+        .createSign("RSA-SHA256")
+        .update(policy)
+        .sign(privateKey, "base64");
+    } catch (error) {
+      console.error("Signature creation error:", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw new Error("Invalid private key or signing configuration");
+    }
   }
 }
