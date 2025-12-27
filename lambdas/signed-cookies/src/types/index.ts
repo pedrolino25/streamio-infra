@@ -2,6 +2,7 @@ export interface ApiGatewayResponse {
   statusCode: number;
   body: string;
   headers?: Record<string, string>;
+  multiValueHeaders?: Record<string, string[]>;
 }
 
 export interface ApiGatewayEvent {

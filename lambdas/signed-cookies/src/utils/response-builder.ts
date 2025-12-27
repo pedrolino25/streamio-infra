@@ -6,6 +6,9 @@ export class ResponseBuilder {
     cookies: SignedCookies,
     domain?: string
   ): ApiGatewayResponse {
+    const cookieAttributes = this.buildCookieAttributes(domain);
+    const setCookieHeaders = this.buildCookieHeaders(cookies, cookieAttributes);
+
     return {
       statusCode: 200,
       body: JSON.stringify({
@@ -18,7 +21,9 @@ export class ResponseBuilder {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Credentials": "false",
         "Access-Control-Expose-Headers": "Set-Cookie",
-        "Set-Cookie": this.buildCookieHeader(cookies, domain),
+      },
+      multiValueHeaders: {
+        "Set-Cookie": setCookieHeaders,
       },
     };
   }
@@ -31,10 +36,7 @@ export class ResponseBuilder {
     };
   }
 
-  private static buildCookieHeader(
-    cookies: SignedCookies,
-    domain?: string
-  ): string {
+  private static buildCookieAttributes(domain?: string): string {
     // Get domain from parameter or environment variable
     const cookieDomain = domain || process.env.CLOUDFRONT_DOMAIN;
 
@@ -46,16 +48,22 @@ export class ResponseBuilder {
     // - Secure: Only sent over HTTPS (required for CloudFront)
     // - HttpOnly: Not accessible via JavaScript (security)
     // - SameSite=None: Required for cross-origin cookie setting (API Gateway to CloudFront)
-    const cookieAttributes = cookieDomain
+    return cookieDomain
       ? `Domain=${cookieDomain}; Path=/; Secure; HttpOnly; SameSite=None`
       : "Path=/; Secure; HttpOnly; SameSite=None";
+  }
 
-    // Build Set-Cookie header with all three required cookies
-    // Multiple Set-Cookie headers should be separate (API Gateway will handle this)
+  private static buildCookieHeaders(
+    cookies: SignedCookies,
+    cookieAttributes: string
+  ): string[] {
+    // Build separate Set-Cookie headers for each cookie
+    // API Gateway requires multiple Set-Cookie headers to be in multiValueHeaders
+    // Each cookie must be sent as a separate header entry
     return [
       `CloudFront-Policy=${cookies["CloudFront-Policy"]}; ${cookieAttributes}`,
       `CloudFront-Signature=${cookies["CloudFront-Signature"]}; ${cookieAttributes}`,
       `CloudFront-Key-Pair-Id=${cookies["CloudFront-Key-Pair-Id"]}; ${cookieAttributes}`,
-    ].join(", ");
+    ];
   }
 }
