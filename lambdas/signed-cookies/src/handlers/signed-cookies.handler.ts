@@ -77,7 +77,7 @@ export class SignedCookiesHandler {
       return ResponseBuilder.success(
         expires,
         cookies,
-        this.config.cloudfrontCustomDomain,
+        this.config.cloudfrontDomain,
         origin,
         wildcardPath
       );

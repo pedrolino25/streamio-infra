@@ -1,18 +1,13 @@
 export class Config {
   readonly projectsTable: string;
   readonly cloudfrontDomain: string; // Actual CloudFront distribution domain (for signed cookie validation)
-  readonly cloudfrontCustomDomain: string; // Custom domain (for cookie Domain attribute)
   readonly cfKeyPairId: string;
   readonly cfPrivateKey: string;
   readonly urlExpiresInSeconds: number;
 
   constructor() {
     this.projectsTable = this.getRequiredEnv("PROJECTS_TABLE");
-    // Use actual CloudFront distribution domain for signed cookie validation
-    // Signed cookies MUST be validated against the distribution domain, not the CNAME
     this.cloudfrontDomain = this.getRequiredEnv("CLOUDFRONT_DOMAIN");
-    // Custom domain for cookie Domain attribute (allows cookies to work with custom domain)
-    this.cloudfrontCustomDomain = this.getOptionalEnv("CLOUDFRONT_CUSTOM_DOMAIN") || this.cloudfrontDomain;
     this.cfKeyPairId = this.getRequiredEnv("CF_KEY_PAIR_ID");
     this.cfPrivateKey = this.getRequiredEnv("CF_PRIVATE_KEY");
     const defaultExpiration = 86400; // 24 hours
