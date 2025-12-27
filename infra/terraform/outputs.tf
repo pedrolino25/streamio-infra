@@ -61,3 +61,13 @@ output "cognito_region" {
   value       = data.aws_region.current.name
   description = "AWS region for Cognito"
 }
+
+output "cloudfront_distribution_arn" {
+  value       = aws_cloudfront_distribution.cdn.arn
+  description = "CloudFront distribution ARN (used in S3 bucket policy condition)"
+}
+
+output "s3_processed_bucket_name" {
+  value       = aws_s3_bucket.processed.id
+  description = "S3 processed bucket name"
+}
