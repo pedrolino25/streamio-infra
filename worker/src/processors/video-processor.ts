@@ -55,7 +55,7 @@ export class VideoProcessor extends BaseProcessor {
         "-loglevel",
         "error",
 
-        // Let FFmpeg use all available CPU cores
+        // Use all allocated CPU cores
         "-threads",
         "0",
 
@@ -95,12 +95,10 @@ export class VideoProcessor extends BaseProcessor {
         "high",
         "-pix_fmt",
         "yuv420p",
-
-        // Much faster than "slow" with negligible quality loss
         "-preset",
         "medium",
 
-        // Streaming-safe GOP
+        // HLS-safe GOP (30 fps → 2s GOP, 4s segments)
         "-g",
         "60",
         "-keyint_min",
@@ -110,7 +108,7 @@ export class VideoProcessor extends BaseProcessor {
 
         // Faster x264 internals without perceptual loss
         "-x264-params",
-        "rc-lookahead=30:bframes=3",
+        "rc-lookahead=30:bframes=3:ref=3",
 
         // -------- BITRATE LADDER --------
         "-b:v:0",
@@ -146,7 +144,7 @@ export class VideoProcessor extends BaseProcessor {
         "-bufsize:v:4",
         "10000k",
 
-        // -------- AUDIO (encode once, reused) --------
+        // -------- AUDIO (single encode, shared via rendition group) --------
         "-c:a",
         "aac",
         "-b:a",
@@ -168,9 +166,8 @@ export class VideoProcessor extends BaseProcessor {
         "-master_pl_name",
         "master.m3u8",
 
-        // One audio stream shared by all variants
         "-var_stream_map",
-        "v:0,a:0 v:1,a:0 v:2,a:0 v:3,a:0 v:4,a:0",
+        "v:0,agroup:audio v:1,agroup:audio v:2,agroup:audio v:3,agroup:audio v:4,agroup:audio a:0,agroup:audio",
 
         "-hls_segment_filename",
         path.join(outputPath, "avc_%v", "seg_%03d.ts"),
