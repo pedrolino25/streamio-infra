@@ -36,7 +36,7 @@ This platform enables multiple projects to:
 ┌─────────────────────┐
 │  API Gateway        │
 │                     │
-│  POST /upload        → Direct File Upload (Lambda → S3)
+│  POST /presigned-upload-url  → Presigned S3 URL for direct upload
 │  POST /signed-url    → CloudFront Signed URLs
 └────┬────────────────┘
      │
@@ -113,7 +113,7 @@ This platform enables multiple projects to:
 
 Get a presigned S3 URL for direct file upload. Files upload directly to S3, bypassing API Gateway's 10MB limit and supporting files of any size (GB, TB, etc.).
 
-**Endpoint:** `POST /upload`
+**Endpoint:** `POST /presigned-upload-url`
 
 **Headers:**
 
@@ -148,7 +148,7 @@ Content-Type: application/json
 
 ```bash
 # 1. Get presigned URL
-RESPONSE=$(curl -X POST https://api.example.com/upload \
+RESPONSE=$(curl -X POST https://api.example.com/presigned-upload-url \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -169,7 +169,7 @@ curl -X PUT "$UPLOAD_URL" \
 
 ```javascript
 // 1. Get presigned URL
-const response = await fetch("https://api.stream-io.cloud/upload", {
+const response = await fetch("https://api.stream-io.cloud/presigned-upload-url", {
   method: "POST",
   headers: {
     "x-api-key": apiKey,
