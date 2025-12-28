@@ -153,12 +153,21 @@ resource "aws_api_gateway_deployment" "api" {
       aws_api_gateway_method.presigned_upload_url_options.id,
       aws_api_gateway_integration.presigned_upload_url.id,
       aws_api_gateway_integration.presigned_upload_url_options.id,
+      aws_lambda_function.presigned_play_url.invoke_arn,
+      aws_lambda_function.presigned_upload_url.invoke_arn,
     ]))
   }
 
   lifecycle {
     create_before_destroy = true
   }
+
+  depends_on = [
+    aws_api_gateway_integration.presigned_play_url,
+    aws_api_gateway_integration.presigned_play_url_options,
+    aws_api_gateway_integration.presigned_upload_url,
+    aws_api_gateway_integration.presigned_upload_url_options,
+  ]
 }
 
 resource "aws_api_gateway_stage" "api" {
