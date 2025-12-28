@@ -171,8 +171,7 @@ export class VideoProcessor extends BaseProcessor {
           "v:1,agroup:audio,name:360p " +
           "v:2,agroup:audio,name:480p " +
           "v:3,agroup:audio,name:720p " +
-          "v:4,agroup:audio,name:1080p " +
-          "a:0,agroup:audio,name:audio",
+          "v:4,agroup:audio,name:1080p",
 
         "-hls_segment_filename",
         path.join(outputPath, "avc_%v", "seg_%03d.ts"),
