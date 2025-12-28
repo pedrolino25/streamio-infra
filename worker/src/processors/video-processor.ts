@@ -174,8 +174,8 @@ export class VideoProcessor extends BaseProcessor {
           "v:4,a:4,name:1080p",
 
         "-hls_segment_filename",
-        path.join(outputPath, "avc_%v", "seg_%03d.ts"),
-        path.join(outputPath, "avc_%v", "index.m3u8"),
+        path.join(outputPath, "stream_%v", "seg_%03d.ts"),
+        path.join(outputPath, "stream_%v", "index.m3u8"),
       ];
 
       const ff = spawn(ffmpegPath, args, {
