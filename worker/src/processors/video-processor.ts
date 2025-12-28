@@ -81,7 +81,7 @@ export class VideoProcessor extends BaseProcessor {
         "-map",
         "[v1080]",
         "-map",
-        "0:a:0?",
+        "0:a:0",
 
         "-c:v",
         "libx264",
@@ -156,11 +156,12 @@ export class VideoProcessor extends BaseProcessor {
         "master.m3u8",
 
         "-var_stream_map",
-        "v:0,a:0,name:240p " +
-          "v:1,a:0,name:360p " +
-          "v:2,a:0,name:480p " +
-          "v:3,a:0,name:720p " +
-          "v:4,a:0,name:1080p",
+        "v:0,agroup:audio,name:240p " +
+          "v:1,agroup:audio,name:360p " +
+          "v:2,agroup:audio,name:480p " +
+          "v:3,agroup:audio,name:720p " +
+          "v:4,agroup:audio,name:1080p " +
+          "a:0,agroup:audio,name:audio",
 
         "-hls_segment_filename",
         path.join(outputPath, "avc_%v", "seg_%03d.ts"),
