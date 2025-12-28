@@ -54,16 +54,12 @@ export class VideoProcessor extends BaseProcessor {
         "-y",
         "-loglevel",
         "error",
-
-        // Use all allocated CPU cores
         "-threads",
         "0",
 
-        // Input
         "-i",
         inputPath,
 
-        // -------- FILTER GRAPH (single decode + split) --------
         "-filter_complex",
         `
           [0:v]fps=30,split=5[v1][v2][v3][v4][v5];
@@ -74,7 +70,6 @@ export class VideoProcessor extends BaseProcessor {
           [v5]scale=1920:1080:force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2[v1080]
         `.replace(/\s+/g, " "),
 
-        // -------- STREAM MAPPING --------
         "-map",
         "[v240]",
         "-map",
@@ -88,7 +83,6 @@ export class VideoProcessor extends BaseProcessor {
         "-map",
         "0:a:0?",
 
-        // -------- VIDEO (x264) --------
         "-c:v",
         "libx264",
         "-profile:v",
@@ -98,7 +92,6 @@ export class VideoProcessor extends BaseProcessor {
         "-preset",
         "medium",
 
-        // HLS-safe GOP (30 fps → 2s GOP, 4s segments)
         "-g",
         "60",
         "-keyint_min",
@@ -106,11 +99,9 @@ export class VideoProcessor extends BaseProcessor {
         "-sc_threshold",
         "0",
 
-        // Faster x264 internals without perceptual loss
         "-x264-params",
         "rc-lookahead=30:bframes=3:ref=3",
 
-        // -------- BITRATE LADDER --------
         "-b:v:0",
         "300k",
         "-b:v:1",
@@ -144,7 +135,6 @@ export class VideoProcessor extends BaseProcessor {
         "-bufsize:v:4",
         "10000k",
 
-        // -------- AUDIO --------
         "-c:a",
         "aac",
         "-b:a",
@@ -154,7 +144,6 @@ export class VideoProcessor extends BaseProcessor {
         "-ar",
         "48000",
 
-        // -------- HLS --------
         "-f",
         "hls",
         "-hls_time",
@@ -167,11 +156,11 @@ export class VideoProcessor extends BaseProcessor {
         "master.m3u8",
 
         "-var_stream_map",
-        "v:0,agroup:audio,name:240p " +
-          "v:1,agroup:audio,name:360p " +
-          "v:2,agroup:audio,name:480p " +
-          "v:3,agroup:audio,name:720p " +
-          "v:4,agroup:audio,name:1080p",
+        "v:0,a:0,name:240p " +
+          "v:1,a:0,name:360p " +
+          "v:2,a:0,name:480p " +
+          "v:3,a:0,name:720p " +
+          "v:4,a:0,name:1080p",
 
         "-hls_segment_filename",
         path.join(outputPath, "avc_%v", "seg_%03d.ts"),
