@@ -54,53 +54,53 @@ export class VideoProcessor extends BaseProcessor {
         "-y",
         "-loglevel",
         "error",
+
+        // Let FFmpeg use all available CPU cores
         "-threads",
-        "1",
+        "0",
+
+        // Input
         "-i",
         inputPath,
 
-        // ---------- SAFE FILTER GRAPH (NO SPLITS) ----------
+        // -------- FILTER GRAPH (single decode + split) --------
         "-filter_complex",
         `
-          [0:v]fps=30,scale=426:240:force_original_aspect_ratio=decrease,scale='trunc(iw/2)*2':'trunc(ih/2)*2'[v240];
-          [0:v]fps=30,scale=640:360:force_original_aspect_ratio=decrease,scale='trunc(iw/2)*2':'trunc(ih/2)*2'[v360];
-          [0:v]fps=30,scale=854:480:force_original_aspect_ratio=decrease,scale='trunc(iw/2)*2':'trunc(ih/2)*2'[v480];
-          [0:v]fps=30,scale=1280:720:force_original_aspect_ratio=decrease,scale='trunc(iw/2)*2':'trunc(ih/2)*2'[v720];
-          [0:v]fps=30,scale=1920:1080:force_original_aspect_ratio=decrease,scale='trunc(iw/2)*2':'trunc(ih/2)*2'[v1080]
+          [0:v]fps=30,split=5[v1][v2][v3][v4][v5];
+          [v1]scale=426:240:force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2[v240];
+          [v2]scale=640:360:force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2[v360];
+          [v3]scale=854:480:force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2[v480];
+          [v4]scale=1280:720:force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2[v720];
+          [v5]scale=1920:1080:force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2[v1080]
         `.replace(/\s+/g, " "),
 
-        // ---------- STREAM MAPPING ----------
+        // -------- STREAM MAPPING --------
         "-map",
         "[v240]",
         "-map",
-        "0:a:0",
-        "-map",
         "[v360]",
-        "-map",
-        "0:a:0",
         "-map",
         "[v480]",
         "-map",
-        "0:a:0",
-        "-map",
         "[v720]",
-        "-map",
-        "0:a:0",
         "-map",
         "[v1080]",
         "-map",
         "0:a:0",
 
-        // ---------- VIDEO (AVC) ----------
+        // -------- VIDEO (x264) --------
         "-c:v",
         "libx264",
         "-profile:v",
         "high",
         "-pix_fmt",
         "yuv420p",
-        "-preset",
-        "slow",
 
+        // Much faster than "slow" with negligible quality loss
+        "-preset",
+        "medium",
+
+        // Streaming-safe GOP
         "-g",
         "60",
         "-keyint_min",
@@ -108,7 +108,11 @@ export class VideoProcessor extends BaseProcessor {
         "-sc_threshold",
         "0",
 
-        // Netflix-style ladder
+        // Faster x264 internals without perceptual loss
+        "-x264-params",
+        "rc-lookahead=30:bframes=3",
+
+        // -------- BITRATE LADDER --------
         "-b:v:0",
         "300k",
         "-b:v:1",
@@ -142,7 +146,7 @@ export class VideoProcessor extends BaseProcessor {
         "-bufsize:v:4",
         "10000k",
 
-        // ---------- AUDIO ----------
+        // -------- AUDIO (encode once, reused) --------
         "-c:a",
         "aac",
         "-b:a",
@@ -152,7 +156,7 @@ export class VideoProcessor extends BaseProcessor {
         "-ar",
         "48000",
 
-        // ---------- HLS ----------
+        // -------- HLS --------
         "-f",
         "hls",
         "-hls_time",
@@ -164,8 +168,9 @@ export class VideoProcessor extends BaseProcessor {
         "-master_pl_name",
         "master.m3u8",
 
+        // One audio stream shared by all variants
         "-var_stream_map",
-        "v:0,a:0 v:1,a:1 v:2,a:2 v:3,a:3 v:4,a:4",
+        "v:0,a:0 v:1,a:0 v:2,a:0 v:3,a:0 v:4,a:0",
 
         "-hls_segment_filename",
         path.join(outputPath, "avc_%v", "seg_%03d.ts"),
