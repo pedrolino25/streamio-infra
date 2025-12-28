@@ -153,8 +153,6 @@ resource "aws_api_gateway_deployment" "api" {
       aws_api_gateway_method.presigned_upload_url_options.id,
       aws_api_gateway_integration.presigned_upload_url.id,
       aws_api_gateway_integration.presigned_upload_url_options.id,
-      aws_lambda_function.presigned_play_url.id,
-      aws_lambda_function.presigned_upload_url.id,
     ]))
   }
 
