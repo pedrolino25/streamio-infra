@@ -5,6 +5,8 @@ import { ALLOWED_VIDEO_TYPES, ProcessingResult } from "../types.js";
 import { BaseProcessor } from "./base-processor.js";
 
 export class VideoProcessor extends BaseProcessor {
+  private readonly VARIANT_COUNT = 5; // 240p, 360p, 480p, 720p, 1080p
+
   canProcess(contentType: string): boolean {
     return ALLOWED_VIDEO_TYPES.includes(contentType.toLowerCase() as any);
   }
@@ -18,6 +20,13 @@ export class VideoProcessor extends BaseProcessor {
     outputPath: string
   ): Promise<ProcessingResult> {
     await this.ensureOutputDirectory(outputPath);
+
+    // Create variant directories for HLS output (FFmpeg doesn't create them automatically)
+    for (let i = 0; i < this.VARIANT_COUNT; i++) {
+      await fs.promises.mkdir(path.join(outputPath, `stream_${i}`), {
+        recursive: true,
+      });
+    }
 
     const ffmpegPath = this.getFfmpegPath();
     await this.runFfmpeg(ffmpegPath, inputPath, outputPath);
@@ -50,6 +59,9 @@ export class VideoProcessor extends BaseProcessor {
     outputPath: string
   ): Promise<void> {
     return new Promise((resolve, reject) => {
+      // Normalize path to use forward slashes (FFmpeg expects this for %v placeholder)
+      const normalizedPath = outputPath.replace(/\\/g, "/");
+
       const args = [
         "-y",
         "-loglevel",
@@ -164,7 +176,7 @@ export class VideoProcessor extends BaseProcessor {
         "-hls_flags",
         "independent_segments",
         "-master_pl_name",
-        "master.m3u8",
+        `${normalizedPath}/master.m3u8`,
 
         "-var_stream_map",
         "v:0,a:0,name:240p " +
@@ -174,8 +186,8 @@ export class VideoProcessor extends BaseProcessor {
           "v:4,a:4,name:1080p",
 
         "-hls_segment_filename",
-        path.join(outputPath, "stream_%v", "seg_%03d.ts"),
-        path.join(outputPath, "stream_%v", "index.m3u8"),
+        `${normalizedPath}/stream_%v/seg_%03d.ts`,
+        `${normalizedPath}/stream_%v/index.m3u8`,
       ];
 
       const ff = spawn(ffmpegPath, args, {
