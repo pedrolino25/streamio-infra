@@ -94,7 +94,7 @@ export class VideoProcessor extends BaseProcessor {
         "-map",
         "[a4]",
 
-        // -------- VIDEO --------
+        // -------- VIDEO (QUALITY / PERFORMANCE BALANCED) --------
         "-c:v",
         "libx264",
         "-profile:v",
@@ -102,7 +102,7 @@ export class VideoProcessor extends BaseProcessor {
         "-pix_fmt",
         "yuv420p",
         "-preset",
-        "medium",
+        "medium", // best perf/quality balance
         "-g",
         "60",
         "-keyint_min",
@@ -120,7 +120,7 @@ export class VideoProcessor extends BaseProcessor {
         "-ar",
         "48000",
 
-        // -------- BITRATES --------
+        // -------- BITRATE LADDER --------
         "-b:v:0",
         "300k",
         "-b:v:1",
@@ -131,6 +131,28 @@ export class VideoProcessor extends BaseProcessor {
         "2500k",
         "-b:v:4",
         "5000k",
+
+        "-maxrate:v:0",
+        "360k",
+        "-maxrate:v:1",
+        "900k",
+        "-maxrate:v:2",
+        "1440k",
+        "-maxrate:v:3",
+        "3000k",
+        "-maxrate:v:4",
+        "6000k",
+
+        "-bufsize:v:0",
+        "600k",
+        "-bufsize:v:1",
+        "1500k",
+        "-bufsize:v:2",
+        "2400k",
+        "-bufsize:v:3",
+        "5000k",
+        "-bufsize:v:4",
+        "10000k",
 
         // -------- HLS --------
         "-f",
