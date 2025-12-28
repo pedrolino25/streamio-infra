@@ -60,6 +60,7 @@ export class VideoProcessor extends BaseProcessor {
         "-i",
         inputPath,
 
+        // -------- FILTER GRAPH --------
         "-filter_complex",
         `
           [0:v]fps=30,split=5[v1][v2][v3][v4][v5];
@@ -67,22 +68,33 @@ export class VideoProcessor extends BaseProcessor {
           [v2]scale=640:360:force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2[v360];
           [v3]scale=854:480:force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2[v480];
           [v4]scale=1280:720:force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2[v720];
-          [v5]scale=1920:1080:force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2[v1080]
+          [v5]scale=1920:1080:force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2[v1080];
+          [0:a]asplit=5[a0][a1][a2][a3][a4]
         `.replace(/\s+/g, " "),
 
+        // -------- STREAM MAPPING --------
         "-map",
         "[v240]",
         "-map",
+        "[a0]",
+        "-map",
         "[v360]",
+        "-map",
+        "[a1]",
         "-map",
         "[v480]",
         "-map",
+        "[a2]",
+        "-map",
         "[v720]",
+        "-map",
+        "[a3]",
         "-map",
         "[v1080]",
         "-map",
-        "0:a:0",
+        "[a4]",
 
+        // -------- VIDEO --------
         "-c:v",
         "libx264",
         "-profile:v",
@@ -91,7 +103,6 @@ export class VideoProcessor extends BaseProcessor {
         "yuv420p",
         "-preset",
         "medium",
-
         "-g",
         "60",
         "-keyint_min",
@@ -99,9 +110,17 @@ export class VideoProcessor extends BaseProcessor {
         "-sc_threshold",
         "0",
 
-        "-x264-params",
-        "rc-lookahead=30:bframes=3:ref=3",
+        // -------- AUDIO --------
+        "-c:a",
+        "aac",
+        "-b:a",
+        "128k",
+        "-ac",
+        "2",
+        "-ar",
+        "48000",
 
+        // -------- BITRATES --------
         "-b:v:0",
         "300k",
         "-b:v:1",
@@ -113,37 +132,7 @@ export class VideoProcessor extends BaseProcessor {
         "-b:v:4",
         "5000k",
 
-        "-maxrate:v:0",
-        "360k",
-        "-maxrate:v:1",
-        "900k",
-        "-maxrate:v:2",
-        "1440k",
-        "-maxrate:v:3",
-        "3000k",
-        "-maxrate:v:4",
-        "6000k",
-
-        "-bufsize:v:0",
-        "600k",
-        "-bufsize:v:1",
-        "1500k",
-        "-bufsize:v:2",
-        "2400k",
-        "-bufsize:v:3",
-        "5000k",
-        "-bufsize:v:4",
-        "10000k",
-
-        "-c:a",
-        "aac",
-        "-b:a",
-        "128k",
-        "-ac",
-        "2",
-        "-ar",
-        "48000",
-
+        // -------- HLS --------
         "-f",
         "hls",
         "-hls_time",
@@ -156,12 +145,11 @@ export class VideoProcessor extends BaseProcessor {
         "master.m3u8",
 
         "-var_stream_map",
-        "v:0,agroup:audio,name:240p " +
-          "v:1,agroup:audio,name:360p " +
-          "v:2,agroup:audio,name:480p " +
-          "v:3,agroup:audio,name:720p " +
-          "v:4,agroup:audio,name:1080p " +
-          "a:0,agroup:audio,name:audio",
+        "v:0,a:0,name:240p " +
+          "v:1,a:1,name:360p " +
+          "v:2,a:2,name:480p " +
+          "v:3,a:3,name:720p " +
+          "v:4,a:4,name:1080p",
 
         "-hls_segment_filename",
         path.join(outputPath, "avc_%v", "seg_%03d.ts"),
