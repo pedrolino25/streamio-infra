@@ -61,7 +61,7 @@ resource "aws_api_gateway_integration" "presigned_play_url_options" {
 
 # Lambda permission for API Gateway
 resource "aws_lambda_permission" "api_gateway_presigned_play_url" {
-  statement_id  = "AllowExecutionFromAPIGateway"
+  statement_id  = "AllowExecutionFromAPIGatewayPresignedPlayUrl"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.presigned_play_url.function_name
   principal     = "apigateway.amazonaws.com"
@@ -127,7 +127,7 @@ resource "aws_api_gateway_integration" "presigned_upload_url_options" {
 
 # Lambda permission for API Gateway
 resource "aws_lambda_permission" "api_gateway_presigned_upload_url" {
-  statement_id  = "AllowExecutionFromAPIGateway"
+  statement_id  = "AllowExecutionFromAPIGatewayPresignedUploadUrl"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.presigned_upload_url.function_name
   principal     = "apigateway.amazonaws.com"
