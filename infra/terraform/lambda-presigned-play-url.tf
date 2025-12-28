@@ -1,9 +1,9 @@
-resource "aws_lambda_function" "signed_url" {
-  function_name = "${local.project_name}-signed-url-${var.environment}"
+resource "aws_lambda_function" "presigned_play_url" {
+  function_name = "${local.project_name}-presigned-play-url-${var.environment}"
   role          = aws_iam_role.lambda.arn
   runtime       = "nodejs20.x"
   handler       = "index.handler"
-  filename      = "../../lambdas/signed-url/dist/signed-url.zip"
+  filename      = "../../lambdas/presigned-play-url/dist/presigned-play-url.zip"
 
   environment {
     variables = {

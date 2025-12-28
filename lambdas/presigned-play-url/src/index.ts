@@ -1,7 +1,7 @@
-import { SignedUrlHandler } from "./handlers/signed-url.handler";
+import { PresignedPlayUrlHandler } from "./handlers/presigned-play-url.handler";
 import { ApiGatewayEvent, ApiGatewayResponse } from "./types";
 
-const handlerInstance = new SignedUrlHandler();
+const handlerInstance = new PresignedPlayUrlHandler();
 
 export const handler = async (
   event: ApiGatewayEvent

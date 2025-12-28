@@ -21,8 +21,8 @@ resource "aws_cloudwatch_log_group" "lambda_dispatcher" {
   }
 }
 
-resource "aws_cloudwatch_log_group" "lambda_signed_url" {
-  name              = "/aws/lambda/${local.project_name}-signed-url-${var.environment}"
+resource "aws_cloudwatch_log_group" "lambda_presigned_play_url" {
+  name              = "/aws/lambda/${local.project_name}-presigned-play-url-${var.environment}"
   retention_in_days = 14
 
   lifecycle {

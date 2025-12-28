@@ -6,7 +6,7 @@ import { ApiGatewayEvent, ApiGatewayResponse, ErrorCode } from "../types";
 import { RequestValidator } from "../utils/request-validator";
 import { ResponseBuilder } from "../utils/response-builder";
 
-export class SignedUrlHandler {
+export class PresignedPlayUrlHandler {
   private readonly config: Config;
   private readonly projectService: ProjectService;
   private readonly urlSigner: UrlSigner;

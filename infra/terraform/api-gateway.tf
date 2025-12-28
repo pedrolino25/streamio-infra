@@ -6,56 +6,56 @@ resource "aws_api_gateway_rest_api" "api" {
 # API Gateway Resources and Methods
 ############################################
 
-# Resource for /signed-url
-resource "aws_api_gateway_resource" "signed_url" {
+# Resource for /presigned-play-url
+resource "aws_api_gateway_resource" "presigned_play_url" {
   rest_api_id = aws_api_gateway_rest_api.api.id
   parent_id   = aws_api_gateway_rest_api.api.root_resource_id
-  path_part   = "signed-url"
+  path_part   = "presigned-play-url"
 }
 
-# POST method for /signed-url
-resource "aws_api_gateway_method" "signed_url_post" {
+# POST method for /presigned-play-url
+resource "aws_api_gateway_method" "presigned_play_url_post" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.signed_url.id
+  resource_id   = aws_api_gateway_resource.presigned_play_url.id
   http_method   = "POST"
   authorization = "NONE"
 }
 
 # OPTIONS method for CORS preflight
-resource "aws_api_gateway_method" "signed_url_options" {
+resource "aws_api_gateway_method" "presigned_play_url_options" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.signed_url.id
+  resource_id   = aws_api_gateway_resource.presigned_play_url.id
   http_method   = "OPTIONS"
   authorization = "NONE"
 }
 
 # Integration with Lambda
-resource "aws_api_gateway_integration" "signed_url" {
+resource "aws_api_gateway_integration" "presigned_play_url" {
   rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.signed_url.id
-  http_method = aws_api_gateway_method.signed_url_post.http_method
+  resource_id = aws_api_gateway_resource.presigned_play_url.id
+  http_method = aws_api_gateway_method.presigned_play_url_post.http_method
 
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.signed_url.invoke_arn
+  uri                     = aws_lambda_function.presigned_play_url.invoke_arn
 }
 
 # Lambda integration for OPTIONS (CORS preflight)
-resource "aws_api_gateway_integration" "signed_url_options" {
+resource "aws_api_gateway_integration" "presigned_play_url_options" {
   rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.signed_url.id
-  http_method = aws_api_gateway_method.signed_url_options.http_method
+  resource_id = aws_api_gateway_resource.presigned_play_url.id
+  http_method = aws_api_gateway_method.presigned_play_url_options.http_method
 
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.signed_url.invoke_arn
+  uri                     = aws_lambda_function.presigned_play_url.invoke_arn
 }
 
 # Lambda permission for API Gateway
-resource "aws_lambda_permission" "api_gateway_signed_url" {
+resource "aws_lambda_permission" "api_gateway_presigned_play_url" {
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.signed_url.function_name
+  function_name = aws_lambda_function.presigned_play_url.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/*/*"
 }
@@ -127,11 +127,11 @@ resource "aws_api_gateway_deployment" "api" {
 
   triggers = {
     redeployment = sha1(jsonencode([
-      aws_api_gateway_resource.signed_url.id,
-      aws_api_gateway_method.signed_url_post.id,
-      aws_api_gateway_method.signed_url_options.id,
-      aws_api_gateway_integration.signed_url.id,
-      aws_api_gateway_integration.signed_url_options.id,
+      aws_api_gateway_resource.presigned_play_url.id,
+      aws_api_gateway_method.presigned_play_url_post.id,
+      aws_api_gateway_method.presigned_play_url_options.id,
+      aws_api_gateway_integration.presigned_play_url.id,
+      aws_api_gateway_integration.presigned_play_url_options.id,
       aws_api_gateway_resource.presigned_upload_url.id,
       aws_api_gateway_method.presigned_upload_url_post.id,
       aws_api_gateway_method.presigned_upload_url_options.id,
@@ -145,10 +145,10 @@ resource "aws_api_gateway_deployment" "api" {
   }
 
   depends_on = [
-    aws_api_gateway_method.signed_url_post,
-    aws_api_gateway_method.signed_url_options,
-    aws_api_gateway_integration.signed_url,
-    aws_api_gateway_integration.signed_url_options,
+    aws_api_gateway_method.presigned_play_url_post,
+    aws_api_gateway_method.presigned_play_url_options,
+    aws_api_gateway_integration.presigned_play_url,
+    aws_api_gateway_integration.presigned_play_url_options,
     aws_api_gateway_method.presigned_upload_url_post,
     aws_api_gateway_method.presigned_upload_url_options,
     aws_api_gateway_integration.presigned_upload_url,

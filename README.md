@@ -37,7 +37,7 @@ This platform enables multiple projects to:
 │  API Gateway        │
 │                     │
 │  POST /presigned-upload-url  → Presigned S3 URL for direct upload
-│  POST /signed-url    → CloudFront Signed URLs
+│  POST /presigned-play-url  → CloudFront Signed URLs
 └────┬────────────────┘
      │
      ▼
@@ -169,18 +169,21 @@ curl -X PUT "$UPLOAD_URL" \
 
 ```javascript
 // 1. Get presigned URL
-const response = await fetch("https://api.stream-io.cloud/presigned-upload-url", {
-  method: "POST",
-  headers: {
-    "x-api-key": apiKey,
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    filename: file.name,
-    path: values.path?.trim() || "",
-    contentType: file.type,
-  }),
-});
+const response = await fetch(
+  "https://api.stream-io.cloud/presigned-upload-url",
+  {
+    method: "POST",
+    headers: {
+      "x-api-key": apiKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      filename: file.name,
+      path: values.path?.trim() || "",
+      contentType: file.type,
+    }),
+  }
+);
 
 const { uploadUrl, s3Key } = await response.json();
 
@@ -197,10 +200,12 @@ console.log("File uploaded to:", s3Key);
 ```
 
 **Supported File Types:**
+
 - Images: JPEG, PNG, GIF, WebP, BMP, SVG, TIFF, ICO, AVIF, HEIC, HEIF
 - Videos: MP4, MPEG, QuickTime, AVI, WMV, WebM, OGG, MKV, FLV, 3GP, and more
 
 **Benefits:**
+
 - ✅ No file size limit (supports GB, TB files)
 - ✅ Direct upload to S3 (faster, more reliable)
 - ✅ Bypasses API Gateway 10MB limit
@@ -212,7 +217,7 @@ console.log("File uploaded to:", s3Key);
 
 Get CloudFront signed URL parameters for secure video playback. The signed URL uses a wildcard policy that authorizes access to all HLS content under the project path.
 
-**Endpoint:** `POST /signed-url`
+**Endpoint:** `POST /presigned-play-url`
 
 **Headers:**
 
@@ -236,7 +241,7 @@ x-api-key: YOUR_API_KEY
 
 ```javascript
 // Call backend once per page/session
-const response = await fetch("https://api.example.com/signed-url", {
+const response = await fetch("https://api.example.com/presigned-play-url", {
   method: "POST",
   headers: { "x-api-key": "YOUR_API_KEY" },
 });

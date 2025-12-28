@@ -64,7 +64,7 @@ jobs:
       - name: Build Lambda functions
         run: |
           set -e
-          for lambda in presigned-upload-url s3-dispatcher signed-url; do
+          for lambda in presigned-upload-url s3-dispatcher presigned-play-url; do
             echo "Building lambda: $lambda"
             cd lambdas/$lambda
             npm install
