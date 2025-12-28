@@ -38,6 +38,10 @@ resource "aws_api_gateway_integration" "presigned_play_url" {
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.presigned_play_url.invoke_arn
+
+  depends_on = [
+    aws_lambda_function.presigned_play_url
+  ]
 }
 
 # Lambda integration for OPTIONS (CORS preflight)
@@ -49,6 +53,10 @@ resource "aws_api_gateway_integration" "presigned_play_url_options" {
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.presigned_play_url.invoke_arn
+
+  depends_on = [
+    aws_lambda_function.presigned_play_url
+  ]
 }
 
 # Lambda permission for API Gateway
@@ -96,6 +104,10 @@ resource "aws_api_gateway_integration" "presigned_upload_url" {
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.presigned_upload_url.invoke_arn
+
+  depends_on = [
+    aws_lambda_function.presigned_upload_url
+  ]
 }
 
 # Lambda integration for OPTIONS (CORS preflight)
@@ -107,6 +119,10 @@ resource "aws_api_gateway_integration" "presigned_upload_url_options" {
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.presigned_upload_url.invoke_arn
+
+  depends_on = [
+    aws_lambda_function.presigned_upload_url
+  ]
 }
 
 # Lambda permission for API Gateway
@@ -137,23 +153,14 @@ resource "aws_api_gateway_deployment" "api" {
       aws_api_gateway_method.presigned_upload_url_options.id,
       aws_api_gateway_integration.presigned_upload_url.id,
       aws_api_gateway_integration.presigned_upload_url_options.id,
+      aws_lambda_function.presigned_play_url.id,
+      aws_lambda_function.presigned_upload_url.id,
     ]))
   }
 
   lifecycle {
     create_before_destroy = true
   }
-
-  depends_on = [
-    aws_api_gateway_method.presigned_play_url_post,
-    aws_api_gateway_method.presigned_play_url_options,
-    aws_api_gateway_integration.presigned_play_url,
-    aws_api_gateway_integration.presigned_play_url_options,
-    aws_api_gateway_method.presigned_upload_url_post,
-    aws_api_gateway_method.presigned_upload_url_options,
-    aws_api_gateway_integration.presigned_upload_url,
-    aws_api_gateway_integration.presigned_upload_url_options,
-  ]
 }
 
 resource "aws_api_gateway_stage" "api" {
