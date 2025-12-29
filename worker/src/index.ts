@@ -45,6 +45,10 @@ class ProcessingJob {
     console.log("Processing file...");
     const result = await processor.process(inputPath, outputPath);
 
+    console.log(
+      "Processed files:",
+      JSON.stringify(result.outputFiles, null, 2)
+    );
     console.log("Uploading processed files...");
     const outputDir = path.dirname(config.job.outputKey);
     const normalizedOutputDir = normalizePath(outputDir);
