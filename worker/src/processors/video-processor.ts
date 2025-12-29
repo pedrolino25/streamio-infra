@@ -19,22 +19,12 @@ export class VideoProcessor extends BaseProcessor {
   ): Promise<ProcessingResult> {
     await this.ensureOutputDirectory(outputPath);
 
-    // Pre-create variant directories (still recommended)
-    for (let i = 0; i < 5; i++) {
-      await fs.promises.mkdir(path.join(outputPath, `stream_${i}`), {
-        recursive: true,
-      });
-    }
-
     const ffmpegPath = this.getFfmpegPath();
     await this.runFfmpeg(ffmpegPath, inputPath, outputPath);
 
     const outputFiles = await this.listOutputFiles(outputPath);
 
-    return {
-      outputPath,
-      outputFiles,
-    };
+    return { outputPath, outputFiles };
   }
 
   private getFfmpegPath(): string {
@@ -45,9 +35,7 @@ export class VideoProcessor extends BaseProcessor {
     ];
 
     const found = candidates.find(fs.existsSync);
-    if (!found) {
-      throw new Error("FFmpeg not found in container");
-    }
+    if (!found) throw new Error("FFmpeg not found");
     return found;
   }
 
@@ -79,7 +67,7 @@ export class VideoProcessor extends BaseProcessor {
           [0:a]asplit=5[a0][a1][a2][a3][a4]
         `.replace(/\s+/g, " "),
 
-        // -------- STREAM MAPPING --------
+        // -------- STREAM MAP --------
         "-map",
         "[v240]",
         "-map",
@@ -127,7 +115,7 @@ export class VideoProcessor extends BaseProcessor {
         "-ar",
         "48000",
 
-        // -------- BITRATES --------
+        // -------- BITRATE LADDER --------
         "-b:v:0",
         "300k",
         "-b:v:1",
@@ -161,7 +149,7 @@ export class VideoProcessor extends BaseProcessor {
         "-bufsize:v:4",
         "10000k",
 
-        // 🔴 THIS IS THE MISSING PIECE
+        // -------- REQUIRED --------
         "-mkdir",
         "1",
 
@@ -199,8 +187,8 @@ export class VideoProcessor extends BaseProcessor {
 
       ff.once("error", reject);
       ff.once("close", (code) => {
-        if (code === 0) return resolve();
-        reject(new Error(`FFmpeg failed (${code}):\n${stderr}`));
+        if (code === 0) resolve();
+        else reject(new Error(`FFmpeg failed (${code}):\n${stderr}`));
       });
     });
   }
@@ -208,16 +196,16 @@ export class VideoProcessor extends BaseProcessor {
   private async listOutputFiles(outputPath: string): Promise<string[]> {
     const files: string[] = [];
 
-    async function traverse(dir: string): Promise<void> {
+    async function walk(dir: string): Promise<void> {
       const entries = await fs.promises.readdir(dir, { withFileTypes: true });
-      for (const entry of entries) {
-        const fullPath = path.join(dir, entry.name);
-        if (entry.isDirectory()) await traverse(fullPath);
-        else files.push(fullPath);
+      for (const e of entries) {
+        const p = path.join(dir, e.name);
+        if (e.isDirectory()) await walk(p);
+        else files.push(p);
       }
     }
 
-    await traverse(outputPath);
+    await walk(outputPath);
     return files;
   }
 }
