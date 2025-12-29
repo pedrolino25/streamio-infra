@@ -19,12 +19,6 @@ export class VideoProcessor extends BaseProcessor {
   ): Promise<ProcessingResult> {
     await this.ensureOutputDirectory(outputPath);
 
-    for (let i = 0; i < 5; i++) {
-      await fs.promises.mkdir(path.join(outputPath, `stream_${i}`), {
-        recursive: true,
-      });
-    }
-
     const ffmpegPath = this.getFfmpegPath();
     await this.runFfmpeg(ffmpegPath, inputPath, outputPath);
 
@@ -176,27 +170,32 @@ export class VideoProcessor extends BaseProcessor {
       let stderr = "";
       ff.stderr.on("data", (d) => (stderr += d.toString()));
 
-      ff.once("error", reject);
-      ff.once("close", (code) => {
-        if (code === 0) resolve();
-        else reject(new Error(`FFmpeg failed (${code}):\n${stderr}`));
+      ff.on("close", (code) => {
+        if (code === 0) return resolve();
+        reject(new Error(`FFmpeg failed (${code}):\n${stderr}`));
       });
+
+      ff.on("error", reject);
     });
   }
 
   private async listOutputFiles(outputPath: string): Promise<string[]> {
     const files: string[] = [];
 
-    async function walk(dir: string): Promise<void> {
+    async function traverse(dir: string): Promise<void> {
       const entries = await fs.promises.readdir(dir, { withFileTypes: true });
-      for (const e of entries) {
-        const p = path.join(dir, e.name);
-        if (e.isDirectory()) await walk(p);
-        else files.push(p);
+
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          await traverse(fullPath);
+        } else {
+          files.push(fullPath);
+        }
       }
     }
 
-    await walk(outputPath);
+    await traverse(outputPath);
     return files;
   }
 }
