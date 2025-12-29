@@ -16,7 +16,7 @@ RUN npm run build
 ############################
 # Runtime stage
 ############################
-FROM linuxserver/ffmpeg:latest
+FROM linuxserver/ffmpeg:6.0
 
 # 🔥 CRITICAL FIX: remove ffmpeg ENTRYPOINT
 ENTRYPOINT []
