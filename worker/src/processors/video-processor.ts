@@ -19,11 +19,17 @@ export class VideoProcessor extends BaseProcessor {
   ): Promise<ProcessingResult> {
     await this.ensureOutputDirectory(outputPath);
 
+    // ✅ REQUIRED FOR FFmpeg < 5.0
+    for (let i = 0; i < 5; i++) {
+      await fs.promises.mkdir(path.join(outputPath, `stream_${i}`), {
+        recursive: true,
+      });
+    }
+
     const ffmpegPath = this.getFfmpegPath();
     await this.runFfmpeg(ffmpegPath, inputPath, outputPath);
 
     const outputFiles = await this.listOutputFiles(outputPath);
-
     return { outputPath, outputFiles };
   }
 
@@ -55,7 +61,6 @@ export class VideoProcessor extends BaseProcessor {
         "-i",
         inputPath,
 
-        // -------- FILTER GRAPH --------
         "-filter_complex",
         `
           [0:v]fps=30,split=5[v1][v2][v3][v4][v5];
@@ -67,7 +72,6 @@ export class VideoProcessor extends BaseProcessor {
           [0:a]asplit=5[a0][a1][a2][a3][a4]
         `.replace(/\s+/g, " "),
 
-        // -------- STREAM MAP --------
         "-map",
         "[v240]",
         "-map",
@@ -89,7 +93,6 @@ export class VideoProcessor extends BaseProcessor {
         "-map",
         "[a4]",
 
-        // -------- VIDEO --------
         "-c:v",
         "libx264",
         "-profile:v",
@@ -105,7 +108,6 @@ export class VideoProcessor extends BaseProcessor {
         "-sc_threshold",
         "0",
 
-        // -------- AUDIO --------
         "-c:a",
         "aac",
         "-b:a",
@@ -115,7 +117,6 @@ export class VideoProcessor extends BaseProcessor {
         "-ar",
         "48000",
 
-        // -------- BITRATE LADDER --------
         "-b:v:0",
         "300k",
         "-b:v:1",
@@ -149,11 +150,6 @@ export class VideoProcessor extends BaseProcessor {
         "-bufsize:v:4",
         "10000k",
 
-        // -------- REQUIRED --------
-        "-mkdir",
-        "1",
-
-        // -------- HLS --------
         "-f",
         "hls",
         "-hls_time",
@@ -166,11 +162,7 @@ export class VideoProcessor extends BaseProcessor {
         "master.m3u8",
 
         "-var_stream_map",
-        "v:0,a:0,name:240p " +
-          "v:1,a:1,name:360p " +
-          "v:2,a:2,name:480p " +
-          "v:3,a:3,name:720p " +
-          "v:4,a:4,name:1080p",
+        "v:0,a:0 v:1,a:1 v:2,a:2 v:3,a:3 v:4,a:4",
 
         "-hls_segment_filename",
         path.join(outputPath, "stream_%v", "seg_%03d.ts"),
