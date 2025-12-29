@@ -19,6 +19,7 @@ export class VideoProcessor extends BaseProcessor {
   ): Promise<ProcessingResult> {
     await this.ensureOutputDirectory(outputPath);
 
+    // Pre-create variant directories (still recommended)
     for (let i = 0; i < 5; i++) {
       await fs.promises.mkdir(path.join(outputPath, `stream_${i}`), {
         recursive: true,
@@ -126,7 +127,7 @@ export class VideoProcessor extends BaseProcessor {
         "-ar",
         "48000",
 
-        // -------- BITRATE LADDER --------
+        // -------- BITRATES --------
         "-b:v:0",
         "300k",
         "-b:v:1",
@@ -160,6 +161,10 @@ export class VideoProcessor extends BaseProcessor {
         "-bufsize:v:4",
         "10000k",
 
+        // 🔴 THIS IS THE MISSING PIECE
+        "-mkdir",
+        "1",
+
         // -------- HLS --------
         "-f",
         "hls",
@@ -189,15 +194,10 @@ export class VideoProcessor extends BaseProcessor {
         stdio: ["ignore", "ignore", "pipe"],
       });
 
-      const MAX_STDERR_SIZE = 10 * 1024;
       let stderr = "";
-
-      ff.stderr.on("data", (chunk: Buffer) => {
-        stderr = (stderr + chunk.toString()).slice(-MAX_STDERR_SIZE);
-      });
+      ff.stderr.on("data", (d) => (stderr += d.toString()));
 
       ff.once("error", reject);
-
       ff.once("close", (code) => {
         if (code === 0) return resolve();
         reject(new Error(`FFmpeg failed (${code}):\n${stderr}`));
@@ -210,14 +210,10 @@ export class VideoProcessor extends BaseProcessor {
 
     async function traverse(dir: string): Promise<void> {
       const entries = await fs.promises.readdir(dir, { withFileTypes: true });
-
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
-        if (entry.isDirectory()) {
-          await traverse(fullPath);
-        } else {
-          files.push(fullPath);
-        }
+        if (entry.isDirectory()) await traverse(fullPath);
+        else files.push(fullPath);
       }
     }
 
