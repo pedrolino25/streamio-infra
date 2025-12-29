@@ -18,6 +18,13 @@ export class VideoProcessor extends BaseProcessor {
     outputPath: string
   ): Promise<ProcessingResult> {
     await this.ensureOutputDirectory(outputPath);
+
+    for (let i = 0; i < 5; i++) {
+      await fs.promises.mkdir(path.join(outputPath, `stream_${i}`), {
+        recursive: true,
+      });
+    }
+
     await this.runFfmpeg(inputPath, outputPath);
 
     const outputFiles = await this.listOutputFiles(outputPath);
@@ -132,10 +139,6 @@ export class VideoProcessor extends BaseProcessor {
         "5000k",
         "-bufsize:v:4",
         "10000k",
-
-        // CREATE VARIANT DIRECTORIES
-        "-mkdir",
-        "1",
 
         // -------- HLS --------
         "-f",
