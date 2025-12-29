@@ -1,3 +1,4 @@
+import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import { config } from "./config.js";
@@ -23,6 +24,8 @@ class ProcessingJob {
   }
 
   async execute(): Promise<void> {
+    const version = execSync("ffmpeg -version").toString();
+    console.log("FFmpeg version:", version);
     console.log(
       `Processing job: ${config.job.inputKey} -> ${config.job.outputKey}`
     );

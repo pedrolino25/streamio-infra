@@ -18,7 +18,6 @@ export class VideoProcessor extends BaseProcessor {
     outputPath: string
   ): Promise<ProcessingResult> {
     await this.ensureOutputDirectory(outputPath);
-
     await this.runFfmpeg(inputPath, outputPath);
 
     const outputFiles = await this.listOutputFiles(outputPath);
