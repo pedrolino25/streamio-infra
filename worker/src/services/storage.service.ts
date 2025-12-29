@@ -44,20 +44,30 @@ export class StorageService {
   async uploadDirectory(
     dirPath: string,
     baseS3Key: string,
-    contentTypeMap?: (filename: string) => string | undefined
+    contentTypeMap?: (filename: string) => string | undefined,
+    rootDir: string = dirPath
   ): Promise<void> {
     const entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
 
     for (const entry of entries) {
       const fullPath = path.join(dirPath, entry.name);
-      const relativePath = path.relative(dirPath, fullPath);
 
       if (entry.isDirectory()) {
-        await this.uploadDirectory(fullPath, baseS3Key, contentTypeMap);
+        await this.uploadDirectory(
+          fullPath,
+          baseS3Key,
+          contentTypeMap,
+          dirPath
+        );
       } else {
-        const s3Key = path.join(baseS3Key, relativePath).replace(/\\/g, "/");
+        const relativePath = path
+          .relative(rootDir, fullPath)
+          .replace(/\\/g, "/");
+
+        const s3Key = `${baseS3Key}/${relativePath}`;
+
         const contentType =
-          contentTypeMap?.(entry.name) || this.getContentType(entry.name);
+          contentTypeMap?.(entry.name) ?? this.getContentType(entry.name);
 
         await this.uploadFile(fullPath, s3Key, contentType);
       }

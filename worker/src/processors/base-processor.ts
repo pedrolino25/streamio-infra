@@ -1,3 +1,4 @@
+import fs from "fs";
 import { MediaType, ProcessingResult } from "../types.js";
 
 export interface IProcessor {
@@ -15,7 +16,6 @@ export abstract class BaseProcessor implements IProcessor {
   abstract getMediaType(): MediaType;
 
   protected async ensureOutputDirectory(outputPath: string): Promise<void> {
-    const fs = await import("fs");
     await fs.promises.mkdir(outputPath, { recursive: true });
   }
 }
