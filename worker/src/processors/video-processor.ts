@@ -54,6 +54,7 @@ export class VideoProcessor extends BaseProcessor {
         "-i",
         inputPath,
 
+        // -------- FILTER GRAPH --------
         "-filter_complex",
         `
           [0:v]fps=30,split=5[v1][v2][v3][v4][v5];
@@ -65,6 +66,7 @@ export class VideoProcessor extends BaseProcessor {
           [0:a]asplit=5[a0][a1][a2][a3][a4]
         `.replace(/\s+/g, " "),
 
+        // -------- STREAM MAP --------
         "-map",
         "[v240]",
         "-map",
@@ -86,6 +88,7 @@ export class VideoProcessor extends BaseProcessor {
         "-map",
         "[a4]",
 
+        // -------- VIDEO --------
         "-c:v",
         "libx264",
         "-profile:v",
@@ -101,6 +104,7 @@ export class VideoProcessor extends BaseProcessor {
         "-sc_threshold",
         "0",
 
+        // -------- AUDIO --------
         "-c:a",
         "aac",
         "-b:a",
@@ -110,6 +114,7 @@ export class VideoProcessor extends BaseProcessor {
         "-ar",
         "48000",
 
+        // -------- BITRATE LADDER --------
         "-b:v:0",
         "300k",
         "-b:v:1",
@@ -143,6 +148,11 @@ export class VideoProcessor extends BaseProcessor {
         "-bufsize:v:4",
         "10000k",
 
+        // CREATE VARIANT DIRECTORIES
+        "-mkdir",
+        "1",
+
+        // -------- HLS --------
         "-f",
         "hls",
         "-hls_time",
@@ -170,32 +180,27 @@ export class VideoProcessor extends BaseProcessor {
       let stderr = "";
       ff.stderr.on("data", (d) => (stderr += d.toString()));
 
-      ff.on("close", (code) => {
-        if (code === 0) return resolve();
-        reject(new Error(`FFmpeg failed (${code}):\n${stderr}`));
+      ff.once("error", reject);
+      ff.once("close", (code) => {
+        if (code === 0) resolve();
+        else reject(new Error(`FFmpeg failed (${code}):\n${stderr}`));
       });
-
-      ff.on("error", reject);
     });
   }
 
   private async listOutputFiles(outputPath: string): Promise<string[]> {
     const files: string[] = [];
 
-    async function traverse(dir: string): Promise<void> {
+    async function walk(dir: string): Promise<void> {
       const entries = await fs.promises.readdir(dir, { withFileTypes: true });
-
-      for (const entry of entries) {
-        const fullPath = path.join(dir, entry.name);
-        if (entry.isDirectory()) {
-          await traverse(fullPath);
-        } else {
-          files.push(fullPath);
-        }
+      for (const e of entries) {
+        const p = path.join(dir, e.name);
+        if (e.isDirectory()) await walk(p);
+        else files.push(p);
       }
     }
 
-    await traverse(outputPath);
+    await walk(outputPath);
     return files;
   }
 }
