@@ -147,8 +147,10 @@ export class VideoProcessor extends BaseProcessor {
         "4",
         "-hls_playlist_type",
         "vod",
+
         "-hls_flags",
-        "independent_segments",
+        "independent_segments+program_date_time",
+
         "-master_pl_name",
         "master.m3u8",
 
