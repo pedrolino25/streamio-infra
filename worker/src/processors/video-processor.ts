@@ -19,7 +19,6 @@ export class VideoProcessor extends BaseProcessor {
   ): Promise<ProcessingResult> {
     await this.ensureOutputDirectory(outputPath);
 
-    // 🔴 REQUIRED: create variant directories explicitly
     for (let i = 0; i < 5; i++) {
       await fs.promises.mkdir(path.join(outputPath, `stream_${i}`), {
         recursive: true,
