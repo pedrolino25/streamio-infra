@@ -19,27 +19,13 @@ export class VideoProcessor extends BaseProcessor {
   ): Promise<ProcessingResult> {
     await this.ensureOutputDirectory(outputPath);
 
-    const ffmpegPath = this.getFfmpegPath();
-    await this.runFfmpeg(ffmpegPath, inputPath, outputPath);
+    await this.runFfmpeg(inputPath, outputPath);
 
     const outputFiles = await this.listOutputFiles(outputPath);
     return { outputPath, outputFiles };
   }
 
-  private getFfmpegPath(): string {
-    const candidates = [
-      "/usr/bin/ffmpeg",
-      "/usr/local/bin/ffmpeg",
-      "/bin/ffmpeg",
-    ];
-
-    const found = candidates.find(fs.existsSync);
-    if (!found) throw new Error("FFmpeg not found");
-    return found;
-  }
-
   private async runFfmpeg(
-    ffmpegPath: string,
     inputPath: string,
     outputPath: string
   ): Promise<void> {
@@ -173,7 +159,7 @@ export class VideoProcessor extends BaseProcessor {
         path.join(outputPath, "stream_%v", "index.m3u8"),
       ];
 
-      const ff = spawn(ffmpegPath, args, {
+      const ff = spawn("ffmpeg", args, {
         stdio: ["ignore", "ignore", "pipe"],
       });
 
